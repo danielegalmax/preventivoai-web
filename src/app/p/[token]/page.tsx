@@ -219,6 +219,10 @@ export default function FirmaPreventivoPage() {
     );
   }
 
+  if (pagina.stato !== "pronto") {
+    return null;
+  }
+
   return (
     <main className="min-h-screen bg-[#F7F8FA] pb-12 text-[#0D1B2A]">
       <header className="border-b border-black/5 bg-white px-4 py-4">
