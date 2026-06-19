@@ -1,11 +1,24 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { FirmaBrandHeader } from "@/components/firma/FirmaBrandHeader";
+import { FirmaPageShell, FirmaStatusCard } from "@/components/firma/FirmaStatusCard";
+import { FirmaSlideFlow } from "@/components/firma/FirmaSlideFlow";
+import { SignaturePad } from "@/components/firma/SignaturePad";
+import { formatEuro } from "@/lib/formatEuro";
 
 type PaginaFirma =
   | { stato: "loading" }
-  | { stato: "pronto"; nomeCliente: string; nomeAzienda: string; html: string; importoTotale?: number | null }
+  | {
+      stato: "pronto";
+      nomeCliente: string;
+      nomeAzienda: string;
+      html: string;
+      importoTotale?: number | null;
+      titolo?: string | null;
+    }
   | { stato: "gia_firmato"; nomeCliente: string; pdfFirmatoUrl?: string; firmatoAt?: string }
   | { stato: "scaduto" | "revocato" | "link_non_valido"; nomeCliente?: string; nomeAzienda?: string }
   | { stato: "successo"; pdfFirmatoUrl?: string; nomeCliente?: string };
@@ -14,93 +27,11 @@ function backendUrl() {
   return (process.env.NEXT_PUBLIC_BACKEND_URL || "").replace(/\/$/, "");
 }
 
-function SignaturePad({ onChange }: { onChange: (dataUrl: string | null) => void }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const drawing = useRef(false);
-
-  const pos = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current!;
-    const rect = canvas.getBoundingClientRect();
-    return {
-      x: ((e.clientX - rect.left) / rect.width) * canvas.width,
-      y: ((e.clientY - rect.top) / rect.height) * canvas.height,
-    };
-  };
-
-  const clear = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    onChange(null);
-  };
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    canvas.width = canvas.offsetWidth * 2;
-    canvas.height = canvas.offsetHeight * 2;
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      ctx.scale(2, 2);
-      ctx.lineWidth = 2;
-      ctx.lineCap = "round";
-      ctx.strokeStyle = "#0D1B2A";
-    }
-  }, []);
-
-  const exportFirma = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const blank = document.createElement("canvas");
-    blank.width = canvas.width;
-    blank.height = canvas.height;
-    if (canvas.toDataURL() === blank.toDataURL()) {
-      onChange(null);
-      return;
-    }
-    onChange(canvas.toDataURL("image/png"));
-  }, [onChange]);
-
-  return (
-    <div>
-      <canvas
-        ref={canvasRef}
-        className="h-36 w-full touch-none rounded-xl border-2 border-dashed border-gray-300 bg-white"
-        onPointerDown={(e) => {
-          drawing.current = true;
-          const canvas = canvasRef.current!;
-          const ctx = canvas.getContext("2d")!;
-          const p = pos(e);
-          ctx.beginPath();
-          ctx.moveTo(p.x / 2, p.y / 2);
-          canvas.setPointerCapture(e.pointerId);
-        }}
-        onPointerMove={(e) => {
-          if (!drawing.current) return;
-          const ctx = canvasRef.current!.getContext("2d")!;
-          const p = pos(e);
-          ctx.lineTo(p.x / 2, p.y / 2);
-          ctx.stroke();
-        }}
-        onPointerUp={() => {
-          drawing.current = false;
-          exportFirma();
-        }}
-        onPointerLeave={() => {
-          if (drawing.current) {
-            drawing.current = false;
-            exportFirma();
-          }
-        }}
-      />
-      <button type="button" onClick={clear} className="mt-2 text-sm text-gray-500 underline">
-        Cancella firma
-      </button>
-    </div>
-  );
-}
+const ERROR_TITLES = {
+  link_non_valido: "Link non valido",
+  scaduto: "Link scaduto",
+  revocato: "Link non più valido",
+} as const;
 
 export default function FirmaPreventivoPage() {
   const params = useParams();
@@ -113,8 +44,19 @@ export default function FirmaPreventivoPage() {
 
   useEffect(() => {
     void (async () => {
+      const base = backendUrl();
+      if (!base) {
+        setPagina({ stato: "link_non_valido" });
+        return;
+      }
+
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 30000);
+
       try {
-        const res = await fetch(`${backendUrl()}/api/public/firma/${token}`);
+        const res = await fetch(`${base}/api/public/firma/${token}`, {
+          signal: controller.signal,
+        });
         const data = await res.json();
         if (data.stato === "pronto") {
           setPagina({
@@ -123,6 +65,7 @@ export default function FirmaPreventivoPage() {
             nomeAzienda: data.nomeAzienda,
             html: data.html,
             importoTotale: data.importoTotale,
+            titolo: data.titolo,
           });
         } else if (data.stato === "gia_firmato") {
           setPagina({
@@ -132,17 +75,23 @@ export default function FirmaPreventivoPage() {
             firmatoAt: data.firmatoAt,
           });
         } else {
-          setPagina({ stato: data.stato, nomeCliente: data.nomeCliente, nomeAzienda: data.nomeAzienda });
+          setPagina({
+            stato: data.stato,
+            nomeCliente: data.nomeCliente,
+            nomeAzienda: data.nomeAzienda,
+          });
         }
       } catch {
         setPagina({ stato: "link_non_valido" });
+      } finally {
+        window.clearTimeout(timeout);
       }
     })();
   }, [token]);
 
   async function conferma() {
     if (!accettato || !firma) {
-      setErrore("Disegna la firma e accetta il preventivo.");
+      setErrore("Disegna la firma e spunta la casella di accettazione.");
       return;
     }
     setErrore("");
@@ -172,50 +121,66 @@ export default function FirmaPreventivoPage() {
 
   if (pagina.stato === "loading") {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#F7F8FA] text-[#0D1B2A]">
-        <p>Caricamento preventivo…</p>
-      </main>
+      <FirmaPageShell>
+        <main className="flex flex-1 items-center justify-center overflow-hidden px-4 py-4">
+          <FirmaStatusCard
+            variant="loading"
+            title="Caricamento preventivo"
+            description="Attendi un momento…"
+          />
+        </main>
+      </FirmaPageShell>
     );
   }
 
   if (pagina.stato === "link_non_valido" || pagina.stato === "scaduto" || pagina.stato === "revocato") {
-    const titoli = {
-      link_non_valido: "Link non valido",
-      scaduto: "Link scaduto",
-      revocato: "Link non più valido",
-    };
     return (
-      <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-6 py-12 text-[#0D1B2A]">
-        <h1 className="text-2xl font-semibold">{titoli[pagina.stato]}</h1>
-        <p className="mt-3 text-gray-600">Contatta l&apos;artigiano per ricevere un nuovo link.</p>
-      </main>
+      <FirmaPageShell>
+        <main className="flex flex-1 items-center justify-center overflow-hidden px-4 py-4">
+          <FirmaStatusCard
+            variant="error"
+            title={ERROR_TITLES[pagina.stato]}
+            description={
+              <>
+                {pagina.nomeAzienda ? (
+                  <p className="mb-2">
+                    Preventivo da <strong>{pagina.nomeAzienda}</strong>
+                  </p>
+                ) : null}
+                Contatta l&apos;artigiano per ricevere un nuovo link di firma.
+              </>
+            }
+          />
+        </main>
+      </FirmaPageShell>
     );
   }
 
   if (pagina.stato === "gia_firmato" || pagina.stato === "successo") {
-    const pdf = pagina.stato === "successo" ? pagina.pdfFirmatoUrl : pagina.pdfFirmatoUrl;
+    const pdf = pagina.pdfFirmatoUrl;
+    const giaFatto = pagina.stato === "gia_firmato";
     return (
-      <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-6 py-12 text-[#0D1B2A]">
-        <div className="rounded-2xl bg-white p-8 shadow-sm">
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#0E9F8E]/15 text-2xl">
-            ✓
-          </div>
-          <h1 className="text-2xl font-semibold">Preventivo accettato</h1>
-          <p className="mt-2 text-gray-600">
-            Grazie{pagina.nomeCliente ? `, ${pagina.nomeCliente}` : ""}! L&apos;artigiano è stato avvisato.
-          </p>
-          {pdf ? (
-            <a
-              href={pdf}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-6 inline-flex rounded-xl bg-[#0D1B2A] px-5 py-3 text-sm font-medium text-white"
-            >
-              Scarica PDF firmato
-            </a>
-          ) : null}
-        </div>
-      </main>
+      <FirmaPageShell>
+        <main className="flex flex-1 items-center justify-center overflow-hidden px-4 py-4">
+          <FirmaStatusCard
+            variant="success"
+            title={giaFatto ? "Preventivo già firmato" : "Preventivo accettato"}
+            description={
+              <>
+                Grazie{pagina.nomeCliente ? `, ${pagina.nomeCliente}` : ""}!{" "}
+                {giaFatto
+                  ? "Hai già completato la firma di questo preventivo."
+                  : "L'artigiano è stato avvisato e ha ricevuto la tua accettazione."}
+              </>
+            }
+            action={
+              pdf
+                ? { href: pdf, label: "Scarica PDF firmato" }
+                : undefined
+            }
+          />
+        </main>
+      </FirmaPageShell>
     );
   }
 
@@ -223,51 +188,82 @@ export default function FirmaPreventivoPage() {
     return null;
   }
 
+  const importoLabel = formatEuro(pagina.importoTotale);
+
   return (
-    <main className="min-h-screen bg-[#F7F8FA] pb-12 text-[#0D1B2A]">
-      <header className="border-b border-black/5 bg-white px-4 py-4">
-        <p className="text-xs uppercase tracking-wide text-gray-500">{pagina.nomeAzienda}</p>
-        <h1 className="text-lg font-semibold">Firma preventivo</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Preventivo per: <strong>{pagina.nomeCliente}</strong>
-        </p>
-      </header>
+    <FirmaPageShell>
+      <FirmaBrandHeader
+        nomeAzienda={pagina.nomeAzienda}
+        nomeCliente={pagina.nomeCliente}
+        titolo={pagina.titolo}
+        importoLabel={importoLabel}
+      />
 
-      <div className="mx-auto mt-6 max-w-3xl px-4">
-        <div
-          className="overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm"
-          dangerouslySetInnerHTML={{ __html: pagina.html }}
+      <main className="mx-auto flex w-full max-w-6xl min-h-0 flex-1 flex-col overflow-hidden px-3 py-2 sm:px-5 sm:py-3">
+        <FirmaSlideFlow
+          html={pagina.html}
+          firmaSlide={
+            <>
+              <p className="text-sm text-[#6B7280]">
+                Scorri le pagine del preventivo, poi firma qui per confermare.
+              </p>
+
+              <ol className="mt-5 space-y-5">
+                <li>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#9CA3AF]">
+                    1 · Firma
+                  </p>
+                  <SignaturePad onChange={setFirma} />
+                </li>
+
+                <li>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#9CA3AF]">
+                    2 · Accettazione
+                  </p>
+                  <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#E5E7EB] bg-[#F7F8FA] p-3 transition hover:border-[#0E9F8E]/40">
+                    <input
+                      type="checkbox"
+                      checked={accettato}
+                      onChange={(e) => setAccettato(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#D1D5DB] text-[#0E9F8E] focus:ring-[#0E9F8E]"
+                    />
+                    <span className="text-sm leading-snug text-[#374151]">
+                      Accetto il preventivo e le condizioni indicate nell&apos;anteprima.
+                    </span>
+                  </label>
+                </li>
+              </ol>
+
+              {errore ? (
+                <p className="mt-4 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {errore}
+                </p>
+              ) : null}
+
+              <button
+                type="button"
+                disabled={invio}
+                onClick={() => void conferma()}
+                className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#0E9F8E] py-3.5 text-sm font-semibold text-white transition hover:bg-[#0c8a7c] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {invio ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                    Invio in corso…
+                  </>
+                ) : (
+                  "Conferma e invia"
+                )}
+              </button>
+
+              <p className="mt-4 text-center text-[11px] leading-relaxed text-[#9CA3AF]">
+                La firma viene registrata in modo sicuro e l&apos;artigiano riceverà una
+                notifica.
+              </p>
+            </>
+          }
         />
-
-        <div className="mt-6 rounded-2xl bg-white p-6 shadow-sm">
-          <h2 className="font-semibold">Firma qui sotto</h2>
-          <p className="mt-1 text-sm text-gray-500">Usa mouse o dito per firmare nel riquadro.</p>
-          <div className="mt-4">
-            <SignaturePad onChange={setFirma} />
-          </div>
-
-          <label className="mt-6 flex cursor-pointer items-start gap-3">
-            <input
-              type="checkbox"
-              checked={accettato}
-              onChange={(e) => setAccettato(e.target.checked)}
-              className="mt-1 h-4 w-4 rounded border-gray-300"
-            />
-            <span className="text-sm">Accetto il preventivo e le condizioni indicate.</span>
-          </label>
-
-          {errore ? <p className="mt-3 text-sm text-red-600">{errore}</p> : null}
-
-          <button
-            type="button"
-            disabled={invio}
-            onClick={() => void conferma()}
-            className="mt-6 w-full rounded-xl bg-[#0E9F8E] py-3 text-sm font-semibold text-white disabled:opacity-60"
-          >
-            {invio ? "Invio in corso…" : "Conferma e invia"}
-          </button>
-        </div>
-      </div>
-    </main>
+      </main>
+    </FirmaPageShell>
   );
 }
