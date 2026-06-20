@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 
-const DEEP_LINK = 'preventivoai://stripe-callback'
+const DEEP_LINK = 'preventivoai:/stripe-callback'
 
 export default function StripeCallbackPage() {
   useEffect(() => {
