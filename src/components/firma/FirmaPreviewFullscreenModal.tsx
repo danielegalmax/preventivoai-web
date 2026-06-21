@@ -26,6 +26,11 @@ const SWIPE_THRESHOLD_PX = 48;
 const DOUBLE_TAP_MS = 320;
 const DOUBLE_TAP_SLOP_PX = 24;
 const ZOOM_STEP = 0.25;
+const FIRMA_ZOOM_DEBUG = true;
+
+function debugZoom(...args: unknown[]) {
+  if (FIRMA_ZOOM_DEBUG) console.log("[firma-zoom]", ...args);
+}
 
 type Props = {
   open: boolean;
@@ -79,6 +84,7 @@ export function FirmaPreviewFullscreenModal({
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const touchOverlayRef = useRef<HTMLDivElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [mountedPage, setMountedPage] = useState(pageIndex);
   const [frame, setFrame] = useState<FrameSize>(FRAME_VUOTO);
   const [view, setView] = useState<ViewTransform>(VIEW_FIT);
@@ -244,9 +250,34 @@ export function FirmaPreviewFullscreenModal({
 
   useEffect(() => {
     const layer = touchOverlayRef.current;
-    if (!open || !layer) return;
+    if (!open || !layer) {
+      debugZoom("listeners: skip", { open, hasLayer: !!layer });
+      return;
+    }
+
+    const iframe = iframeRef.current;
+    const overlayRect = layer.getBoundingClientRect();
+    const iframeRect = iframe?.getBoundingClientRect();
+    debugZoom("listeners: mounted", {
+      overlay: overlayRect,
+      iframe: iframeRect,
+      overlayMatchesIframe:
+        iframeRect &&
+        Math.abs(overlayRect.width - iframeRect.width) < 1 &&
+        Math.abs(overlayRect.height - iframeRect.height) < 1 &&
+        Math.abs(overlayRect.left - iframeRect.left) < 1 &&
+        Math.abs(overlayRect.top - iframeRect.top) < 1,
+      overlayPointerEvents: getComputedStyle(layer).pointerEvents,
+      iframePointerEvents: iframe ? getComputedStyle(iframe).pointerEvents : null,
+      overlayTouchAction: getComputedStyle(layer).touchAction,
+    });
 
     function onTouchStart(e: TouchEvent) {
+      debugZoom("touchstart", {
+        touches: e.touches.length,
+        mode: gestureRef.current.mode,
+        scale: viewRef.current.scale,
+      });
       const current = viewRef.current;
       if (e.touches.length === 2) {
         e.preventDefault();
@@ -257,6 +288,7 @@ export function FirmaPreviewFullscreenModal({
           baseX: current.translateX,
           baseY: current.translateY,
         };
+        debugZoom("pinch: start", gestureRef.current);
         return;
       }
 
@@ -287,8 +319,17 @@ export function FirmaPreviewFullscreenModal({
       if (g.mode === "pinch" && e.touches.length >= 2) {
         e.preventDefault();
         const distance = touchDistance(e.touches);
-        if (g.startDistance <= 0) return;
+        if (g.startDistance <= 0) {
+          debugZoom("pinch: abort startDistance<=0", { distance });
+          return;
+        }
         const nextScale = clampZoom(g.baseScale * (distance / g.startDistance));
+        debugZoom("touchmove pinch", {
+          distance,
+          startDistance: g.startDistance,
+          nextScale,
+          baseScale: g.baseScale,
+        });
         applyView({
           scale: nextScale,
           translateX: g.baseX,
@@ -305,10 +346,18 @@ export function FirmaPreviewFullscreenModal({
           translateX: g.baseX + (touch.clientX - g.startX),
           translateY: g.baseY + (touch.clientY - g.startY),
         });
+      } else if (e.touches.length >= 2 && g.mode !== "pinch") {
+        debugZoom("touchmove ignored (not pinch mode)", { mode: g.mode, touches: e.touches.length });
       }
     }
 
     function onTouchEnd(e: TouchEvent) {
+      debugZoom("touchend", {
+        touches: e.touches.length,
+        changed: e.changedTouches.length,
+        mode: gestureRef.current.mode,
+        scale: viewRef.current.scale,
+      });
       const g = gestureRef.current;
       const current = viewRef.current;
 
@@ -452,6 +501,7 @@ export function FirmaPreviewFullscreenModal({
               }}
             >
               <iframe
+                ref={iframeRef}
                 key={`fullscreen-${mountedPage}-${html.length}-${fitScale.toFixed(4)}`}
                 srcDoc={htmlPerPaginaPreviewFullscreen(html, mountedPage, fitScale)}
                 title={`Preventivo pagina ${mountedPage + 1} ingrandita`}
