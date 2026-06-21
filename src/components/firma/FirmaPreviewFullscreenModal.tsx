@@ -26,11 +26,6 @@ const SWIPE_THRESHOLD_PX = 48;
 const DOUBLE_TAP_MS = 320;
 const DOUBLE_TAP_SLOP_PX = 24;
 const ZOOM_STEP = 0.25;
-const FIRMA_ZOOM_DEBUG = true;
-
-function debugZoom(...args: unknown[]) {
-  if (FIRMA_ZOOM_DEBUG) console.log("[firma-zoom]", ...args);
-}
 
 type Props = {
   open: boolean;
@@ -41,10 +36,16 @@ type Props = {
   onPageChange: (index: number) => void;
 };
 
-function touchDistance(touches: TouchList) {
-  if (touches.length < 2) return 0;
-  const dx = touches[0].clientX - touches[1].clientX;
-  const dy = touches[0].clientY - touches[1].clientY;
+type PointerPoint = {
+  id: number;
+  x: number;
+  y: number;
+  pointerType: string;
+};
+
+function pointerDistance(a: PointerPoint, b: PointerPoint) {
+  const dx = a.x - b.x;
+  const dy = a.y - b.y;
   return Math.hypot(dx, dy);
 }
 
@@ -96,10 +97,11 @@ export function FirmaPreviewFullscreenModal({
 
   const gestureRef = useRef<
     | { mode: "idle" }
-    | { mode: "pan"; startX: number; startY: number; baseX: number; baseY: number }
+    | { mode: "pan"; pointerId: number; startX: number; startY: number; baseX: number; baseY: number }
     | { mode: "pinch"; startDistance: number; baseScale: number; baseX: number; baseY: number }
     | { mode: "swipe"; startX: number; startY: number }
   >({ mode: "idle" });
+  const activePointersRef = useRef<Map<number, PointerPoint>>(new Map());
   const lastTapRef = useRef<{ at: number; x: number; y: number } | null>(null);
 
   const misuraContainer = useCallback(() => {
@@ -250,56 +252,49 @@ export function FirmaPreviewFullscreenModal({
 
   useEffect(() => {
     const layer = touchOverlayRef.current;
-    if (!open || !layer) {
-      debugZoom("listeners: skip", { open, hasLayer: !!layer });
-      return;
+    if (!open || !layer) return;
+    const gestureLayer = layer;
+    const pointerMap = activePointersRef.current;
+
+    function activePointers() {
+      return Array.from(pointerMap.values());
     }
 
-    const iframe = iframeRef.current;
-    const overlayRect = layer.getBoundingClientRect();
-    const iframeRect = iframe?.getBoundingClientRect();
-    debugZoom("listeners: mounted", {
-      overlay: overlayRect,
-      iframe: iframeRect,
-      overlayMatchesIframe:
-        iframeRect &&
-        Math.abs(overlayRect.width - iframeRect.width) < 1 &&
-        Math.abs(overlayRect.height - iframeRect.height) < 1 &&
-        Math.abs(overlayRect.left - iframeRect.left) < 1 &&
-        Math.abs(overlayRect.top - iframeRect.top) < 1,
-      overlayPointerEvents: getComputedStyle(layer).pointerEvents,
-      iframePointerEvents: iframe ? getComputedStyle(iframe).pointerEvents : null,
-      overlayTouchAction: getComputedStyle(layer).touchAction,
-    });
-
-    function onTouchStart(e: TouchEvent) {
-      debugZoom("touchstart", {
-        touches: e.touches.length,
-        mode: gestureRef.current.mode,
-        scale: viewRef.current.scale,
-      });
+    function startPinch(points: PointerPoint[]) {
       const current = viewRef.current;
-      if (e.touches.length === 2) {
-        e.preventDefault();
-        gestureRef.current = {
-          mode: "pinch",
-          startDistance: touchDistance(e.touches),
-          baseScale: current.scale,
-          baseX: current.translateX,
-          baseY: current.translateY,
-        };
-        debugZoom("pinch: start", gestureRef.current);
+      gestureRef.current = {
+        mode: "pinch",
+        startDistance: pointerDistance(points[0], points[1]),
+        baseScale: current.scale,
+        baseX: current.translateX,
+        baseY: current.translateY,
+      };
+    }
+
+    function onPointerDown(e: PointerEvent) {
+      e.preventDefault();
+      gestureLayer.setPointerCapture(e.pointerId);
+
+      const current = viewRef.current;
+      pointerMap.set(e.pointerId, {
+        id: e.pointerId,
+        x: e.clientX,
+        y: e.clientY,
+        pointerType: e.pointerType,
+      });
+
+      const points = activePointers();
+      if (points.length >= 2) {
+        startPinch(points);
         return;
       }
 
-      if (e.touches.length !== 1) return;
-      const touch = e.touches[0];
       if (current.scale > 1) {
-        e.preventDefault();
         gestureRef.current = {
           mode: "pan",
-          startX: touch.clientX,
-          startY: touch.clientY,
+          pointerId: e.pointerId,
+          startX: e.clientX,
+          startY: e.clientY,
           baseX: current.translateX,
           baseY: current.translateY,
         };
@@ -308,28 +303,35 @@ export function FirmaPreviewFullscreenModal({
 
       gestureRef.current = {
         mode: "swipe",
-        startX: touch.clientX,
-        startY: touch.clientY,
+        startX: e.clientX,
+        startY: e.clientY,
       };
     }
 
-    function onTouchMove(e: TouchEvent) {
+    function onPointerMove(e: PointerEvent) {
+      const existing = pointerMap.get(e.pointerId);
+      if (!existing) return;
+
+      e.preventDefault();
+      pointerMap.set(e.pointerId, {
+        id: e.pointerId,
+        x: e.clientX,
+        y: e.clientY,
+        pointerType: e.pointerType,
+      });
+
       const g = gestureRef.current;
       const current = viewRef.current;
-      if (g.mode === "pinch" && e.touches.length >= 2) {
-        e.preventDefault();
-        const distance = touchDistance(e.touches);
-        if (g.startDistance <= 0) {
-          debugZoom("pinch: abort startDistance<=0", { distance });
+      const points = activePointers();
+
+      if (points.length >= 2) {
+        if (g.mode !== "pinch") {
+          startPinch(points);
           return;
         }
+        const distance = pointerDistance(points[0], points[1]);
+        if (g.startDistance <= 0) return;
         const nextScale = clampZoom(g.baseScale * (distance / g.startDistance));
-        debugZoom("touchmove pinch", {
-          distance,
-          startDistance: g.startDistance,
-          nextScale,
-          baseScale: g.baseScale,
-        });
         applyView({
           scale: nextScale,
           translateX: g.baseX,
@@ -338,43 +340,39 @@ export function FirmaPreviewFullscreenModal({
         return;
       }
 
-      if (g.mode === "pan" && e.touches.length === 1) {
-        e.preventDefault();
-        const touch = e.touches[0];
+      if (g.mode === "pan" && g.pointerId === e.pointerId) {
         applyView({
           scale: current.scale,
-          translateX: g.baseX + (touch.clientX - g.startX),
-          translateY: g.baseY + (touch.clientY - g.startY),
+          translateX: g.baseX + (e.clientX - g.startX),
+          translateY: g.baseY + (e.clientY - g.startY),
         });
-      } else if (e.touches.length >= 2 && g.mode !== "pinch") {
-        debugZoom("touchmove ignored (not pinch mode)", { mode: g.mode, touches: e.touches.length });
       }
     }
 
-    function onTouchEnd(e: TouchEvent) {
-      debugZoom("touchend", {
-        touches: e.touches.length,
-        changed: e.changedTouches.length,
-        mode: gestureRef.current.mode,
-        scale: viewRef.current.scale,
-      });
+    function onPointerEnd(e: PointerEvent) {
+      const ended = pointerMap.get(e.pointerId);
+      pointerMap.delete(e.pointerId);
+      if (gestureLayer.hasPointerCapture(e.pointerId)) gestureLayer.releasePointerCapture(e.pointerId);
+
       const g = gestureRef.current;
       const current = viewRef.current;
+      const points = activePointers();
 
-      if (g.mode === "pinch" && e.touches.length < 2) {
+      if (g.mode === "pinch") {
         gestureRef.current = { mode: "idle" };
         return;
       }
 
-      if (g.mode === "pan" && e.touches.length === 0) {
+      if (g.mode === "pan" && g.pointerId === e.pointerId) {
         gestureRef.current = { mode: "idle" };
         return;
       }
 
-      if (g.mode === "swipe" && e.changedTouches.length === 1) {
-        const touch = e.changedTouches[0];
-        const deltaX = touch.clientX - g.startX;
-        const deltaY = touch.clientY - g.startY;
+      if (points.length > 0) return;
+
+      if (g.mode === "swipe" && ended) {
+        const deltaX = ended.x - g.startX;
+        const deltaY = ended.y - g.startY;
 
         if (
           current.scale <= 1 &&
@@ -394,11 +392,11 @@ export function FirmaPreviewFullscreenModal({
             if (current.scale > 1.01) {
               resetView();
             } else {
-              zoomToPoint(2, touch.clientX, touch.clientY);
+              zoomToPoint(2, ended.x, ended.y);
             }
             lastTapRef.current = null;
           } else {
-            lastTapRef.current = { at: now, x: touch.clientX, y: touch.clientY };
+            lastTapRef.current = { at: now, x: ended.x, y: ended.y };
           }
         }
 
@@ -406,16 +404,25 @@ export function FirmaPreviewFullscreenModal({
       }
     }
 
-    layer.addEventListener("touchstart", onTouchStart, { passive: false });
-    layer.addEventListener("touchmove", onTouchMove, { passive: false });
-    layer.addEventListener("touchend", onTouchEnd, { passive: false });
-    layer.addEventListener("touchcancel", onTouchEnd, { passive: false });
+    function onWheel(e: WheelEvent) {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
+      zoomToPoint(viewRef.current.scale + delta, e.clientX, e.clientY);
+    }
+
+    layer.addEventListener("pointerdown", onPointerDown);
+    layer.addEventListener("pointermove", onPointerMove);
+    layer.addEventListener("pointerup", onPointerEnd);
+    layer.addEventListener("pointercancel", onPointerEnd);
+    layer.addEventListener("wheel", onWheel, { passive: false });
 
     return () => {
-      layer.removeEventListener("touchstart", onTouchStart);
-      layer.removeEventListener("touchmove", onTouchMove);
-      layer.removeEventListener("touchend", onTouchEnd);
-      layer.removeEventListener("touchcancel", onTouchEnd);
+      pointerMap.clear();
+      layer.removeEventListener("pointerdown", onPointerDown);
+      layer.removeEventListener("pointermove", onPointerMove);
+      layer.removeEventListener("pointerup", onPointerEnd);
+      layer.removeEventListener("pointercancel", onPointerEnd);
+      layer.removeEventListener("wheel", onWheel);
     };
   }, [applyView, frame.altezza, frame.larghezza, open, pageIndex, resetView, totalPages, vaiA, zoomToPoint]);
 
