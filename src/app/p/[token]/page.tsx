@@ -18,6 +18,7 @@ type PaginaFirma =
       html: string;
       importoTotale?: number | null;
       titolo?: string | null;
+      pdfOriginaleUrl?: string;
     }
   | { stato: "gia_firmato"; nomeCliente: string; pdfFirmatoUrl?: string; firmatoAt?: string }
   | { stato: "scaduto" | "revocato" | "link_non_valido"; nomeCliente?: string; nomeAzienda?: string }
@@ -66,6 +67,7 @@ export default function FirmaPreventivoPage() {
             html: data.html,
             importoTotale: data.importoTotale,
             titolo: data.titolo,
+            pdfOriginaleUrl: data.pdfOriginaleUrl,
           });
         } else if (data.stato === "gia_firmato") {
           setPagina({
@@ -197,6 +199,7 @@ export default function FirmaPreventivoPage() {
         nomeCliente={pagina.nomeCliente}
         titolo={pagina.titolo}
         importoLabel={importoLabel}
+        pdfOriginaleUrl={pagina.pdfOriginaleUrl}
       />
 
       <main className="mx-auto flex w-full max-w-6xl min-h-0 flex-1 flex-col overflow-hidden px-3 py-2 sm:px-5 sm:py-3">

@@ -3,6 +3,29 @@
 import { useEffect, type ReactNode } from "react";
 import { AlertCircle, CheckCircle2, Download, Loader2 } from "lucide-react";
 
+type PdfDownloadLinkProps = {
+  href: string;
+  label: string;
+  className?: string;
+};
+
+export function FirmaPdfDownloadLink({ href, label, className }: PdfDownloadLinkProps) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={
+        className ??
+        "inline-flex items-center gap-2 rounded-xl bg-[#0D1B2A] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#162540]"
+      }
+    >
+      <Download className="h-4 w-4" aria-hidden />
+      {label}
+    </a>
+  );
+}
+
 type StatusCardProps = {
   variant: "success" | "error" | "loading";
   title: string;
@@ -37,15 +60,11 @@ export function FirmaStatusCard({ variant, title, description, action }: StatusC
       <h1 className="text-2xl font-semibold tracking-tight text-[#0D1B2A]">{title}</h1>
       <div className="mt-2 text-sm leading-relaxed text-[#6B7280]">{description}</div>
       {action ? (
-        <a
+        <FirmaPdfDownloadLink
           href={action.href}
-          target="_blank"
-          rel="noopener noreferrer"
+          label={action.label}
           className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#0D1B2A] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#162540]"
-        >
-          <Download className="h-4 w-4" aria-hidden />
-          {action.label}
-        </a>
+        />
       ) : null}
     </div>
   );
