@@ -78,7 +78,7 @@ export function FirmaPreviewFullscreenModal({
   onPageChange,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const gestureLayerRef = useRef<HTMLDivElement>(null);
+  const touchOverlayRef = useRef<HTMLDivElement>(null);
   const [mountedPage, setMountedPage] = useState(pageIndex);
   const [frame, setFrame] = useState<FrameSize>(FRAME_VUOTO);
   const [view, setView] = useState<ViewTransform>(VIEW_FIT);
@@ -243,7 +243,7 @@ export function FirmaPreviewFullscreenModal({
   );
 
   useEffect(() => {
-    const layer = gestureLayerRef.current;
+    const layer = touchOverlayRef.current;
     if (!open || !layer) return;
 
     function onTouchStart(e: TouchEvent) {
@@ -368,7 +368,7 @@ export function FirmaPreviewFullscreenModal({
       layer.removeEventListener("touchend", onTouchEnd);
       layer.removeEventListener("touchcancel", onTouchEnd);
     };
-  }, [applyView, open, pageIndex, resetView, totalPages, vaiA, zoomToPoint]);
+  }, [applyView, frame.altezza, frame.larghezza, open, pageIndex, resetView, totalPages, vaiA, zoomToPoint]);
 
   if (!open) return null;
 
@@ -440,14 +440,10 @@ export function FirmaPreviewFullscreenModal({
         ref={containerRef}
         className="relative min-h-0 flex-1 overflow-hidden bg-[#ECEEF2]"
       >
-        <div
-          ref={gestureLayerRef}
-          className="flex h-full w-full touch-none items-center justify-center p-3 sm:p-6"
-          style={{ touchAction: "none" }}
-        >
+        <div className="flex h-full w-full items-center justify-center p-3 sm:p-6">
           {larghezza > 0 && altezza > 0 ? (
             <div
-              className="will-change-transform"
+              className="relative will-change-transform"
               style={{
                 width: larghezza,
                 height: altezza,
@@ -459,8 +455,14 @@ export function FirmaPreviewFullscreenModal({
                 key={`fullscreen-${mountedPage}-${html.length}-${fitScale.toFixed(4)}`}
                 srcDoc={htmlPerPaginaPreviewFullscreen(html, mountedPage, fitScale)}
                 title={`Preventivo pagina ${mountedPage + 1} ingrandita`}
-                className="block h-full w-full border-0 bg-white shadow-2xl"
+                className="pointer-events-none block h-full w-full border-0 bg-white shadow-2xl"
                 sandbox="allow-same-origin allow-scripts"
+              />
+              <div
+                ref={touchOverlayRef}
+                className="absolute inset-0 z-10 touch-none"
+                style={{ touchAction: "none" }}
+                aria-hidden
               />
             </div>
           ) : (
