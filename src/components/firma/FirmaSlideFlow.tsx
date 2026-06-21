@@ -1,12 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { ChevronLeft, ChevronRight, FileText, PenLine } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText, Maximize2, PenLine } from "lucide-react";
 import {
   dimensioniPaginaPreview,
   htmlPerPaginaPreview,
   type PageBreakMessage,
 } from "@/lib/pdfPreviewPaginata";
+import { FirmaPreviewFullscreenModal } from "./FirmaPreviewFullscreenModal";
 
 type FrameSize = {
   larghezza: number;
@@ -35,6 +36,8 @@ export function FirmaSlideFlow({ html, firmaSlide }: Props) {
   const [frame, setFrame] = useState<FrameSize>(FRAME_VUOTO);
   const [totalPages, setTotalPages] = useState(1);
   const [slideAttivo, setSlideAttivo] = useState(0);
+  const [previewFullscreen, setPreviewFullscreen] = useState(false);
+  const [fullscreenPageIndex, setFullscreenPageIndex] = useState(0);
 
   const totalSlides = totalPages + 1;
   const isFirmaSlide = slideAttivo >= totalPages;
@@ -146,6 +149,12 @@ export function FirmaSlideFlow({ html, firmaSlide }: Props) {
         : FRAME_VUOTO;
   const { larghezza, altezza, scale } = frameVisibile;
 
+  function apriPreviewFullscreen() {
+    if (isFirmaSlide) return;
+    setFullscreenPageIndex(paginaPreventivo);
+    setPreviewFullscreen(true);
+  }
+
   return (
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm">
       <div className="flex shrink-0 items-center justify-between gap-3 border-b border-black/5 bg-[#F7F8FA] px-3 py-2.5 sm:px-4 sm:py-3">
@@ -161,9 +170,22 @@ export function FirmaSlideFlow({ html, firmaSlide }: Props) {
               : `Pagina ${paginaPreventivo + 1} di ${totalPages}`}
           </h2>
         </div>
-        <span className="shrink-0 text-xs font-medium text-[#9CA3AF]">
-          {slideAttivo + 1}/{totalSlides}
-        </span>
+        <div className="flex shrink-0 items-center gap-2">
+          {!isFirmaSlide ? (
+            <button
+              type="button"
+              onClick={apriPreviewFullscreen}
+              className="inline-flex items-center gap-1 rounded-lg border border-black/10 bg-white px-2 py-1.5 text-xs font-medium text-[#0D1B2A]/80 transition hover:bg-[#F7F8FA] sm:gap-1.5 sm:px-2.5 sm:py-2 sm:text-sm"
+              aria-label="Ingrandisci anteprima preventivo"
+            >
+              <Maximize2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden />
+              <span className="hidden sm:inline">Ingrandisci</span>
+            </button>
+          ) : null}
+          <span className="text-xs font-medium text-[#9CA3AF]">
+            {slideAttivo + 1}/{totalSlides}
+          </span>
+        </div>
       </div>
 
       <div ref={viewportRef} className="relative min-h-0 flex-1 bg-[#ECEEF2]">
@@ -262,6 +284,15 @@ export function FirmaSlideFlow({ html, firmaSlide }: Props) {
           <ChevronRight className="h-4 w-4" aria-hidden />
         </button>
       </div>
+
+      <FirmaPreviewFullscreenModal
+        open={previewFullscreen}
+        onClose={() => setPreviewFullscreen(false)}
+        html={html}
+        pageIndex={fullscreenPageIndex}
+        totalPages={totalPages}
+        onPageChange={setFullscreenPageIndex}
+      />
     </section>
   );
 }

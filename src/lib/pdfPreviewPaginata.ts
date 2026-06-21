@@ -91,6 +91,34 @@ export function htmlPerPaginaPreview(html: string, pageIndex: number, scale: num
     .replace("</head>", `${pageScript}</head>`);
 }
 
+function scalaHtmlPreviewFullscreen(html: string): string {
+  if (html.includes("__PREVIEW_FULLSCREEN__")) return html;
+  return html.replace(
+    "</head>",
+    `<meta name="viewport" content="width=${PDF_TEMPLATE_WIDTH}">
+<style>
+  html, body { margin: 0; overflow: auto; -webkit-overflow-scrolling: touch; }
+  #preventivo-preview-scale-root {
+    position: relative;
+    width: ${PDF_TEMPLATE_WIDTH}px;
+    min-height: ${PDF_PAGE_HEIGHT}px;
+    box-sizing: border-box;
+  }
+  a { pointer-events: none !important; cursor: default !important; }
+</style>
+<meta name="preview-mode" content="__PREVIEW_FULLSCREEN__">
+</head>`,
+  );
+}
+
+/** Anteprima pagina singola a scala 1:1 con scroll nativo (modal fullscreen). */
+export function htmlPerPaginaPreviewFullscreen(html: string, pageIndex: number): string {
+  const pageScript = `<script>window.__PREVIEW_PAGE_INDEX=${pageIndex};</script>`;
+
+  return preparaPreview(scalaHtmlPreviewFullscreen(html))
+    .replace("</head>", `${pageScript}</head>`);
+}
+
 export function dimensioniPaginaPreview(availW: number, availH: number) {
   if (availW <= 0 || availH <= 0) {
     return { scale: 0, larghezza: 0, altezza: 0 };
