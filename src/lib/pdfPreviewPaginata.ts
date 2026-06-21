@@ -91,16 +91,23 @@ export function htmlPerPaginaPreview(html: string, pageIndex: number, scale: num
     .replace("</head>", `${pageScript}</head>`);
 }
 
+function rimuoviViewportEsistente(html: string): string {
+  return html.replace(/<meta\s+name=["']viewport["'][^>]*>/gi, "");
+}
+
 function scalaHtmlPreviewFullscreen(html: string): string {
   if (html.includes("__PREVIEW_FULLSCREEN__")) return html;
-  return html.replace(
+  const senzaViewport = rimuoviViewportEsistente(html);
+  return senzaViewport.replace(
     "</head>",
     `<meta name="viewport" content="width=${PDF_TEMPLATE_WIDTH}">
 <style>
   html, body { margin: 0; overflow: auto; -webkit-overflow-scrolling: touch; }
   #preventivo-preview-scale-root {
     position: relative;
-    width: ${PDF_TEMPLATE_WIDTH}px;
+    transform-origin: top left;
+    transform: scale(__FULLSCREEN_SCALE__);
+    width: __FULLSCREEN_WIDTH_PERCENT__%;
     min-height: ${PDF_PAGE_HEIGHT}px;
     box-sizing: border-box;
   }
@@ -111,11 +118,14 @@ function scalaHtmlPreviewFullscreen(html: string): string {
   );
 }
 
-/** Anteprima pagina singola a scala 1:1 con scroll nativo (modal fullscreen). */
-export function htmlPerPaginaPreviewFullscreen(html: string, pageIndex: number): string {
+/** Anteprima pagina singola con scroll nativo (modal fullscreen). */
+export function htmlPerPaginaPreviewFullscreen(html: string, pageIndex: number, scale: number): string {
+  const widthPercent = (100 / scale).toFixed(2);
   const pageScript = `<script>window.__PREVIEW_PAGE_INDEX=${pageIndex};</script>`;
 
   return preparaPreview(scalaHtmlPreviewFullscreen(html))
+    .replace(/__FULLSCREEN_SCALE__/g, scale.toFixed(4))
+    .replace(/__FULLSCREEN_WIDTH_PERCENT__/g, widthPercent)
     .replace("</head>", `${pageScript}</head>`);
 }
 

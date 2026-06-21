@@ -3,10 +3,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import {
+  dimensioniPaginaPreview,
   htmlPerPaginaPreviewFullscreen,
-  PDF_PAGE_HEIGHT,
-  PDF_TEMPLATE_WIDTH,
 } from "@/lib/pdfPreviewPaginata";
+
+type FrameSize = {
+  larghezza: number;
+  altezza: number;
+  scale: number;
+};
+
+const FRAME_VUOTO: FrameSize = { larghezza: 0, altezza: 0, scale: 1 };
 
 type Props = {
   open: boolean;
@@ -28,7 +35,15 @@ export function FirmaPreviewFullscreenModal({
   onPageChange,
 }: Props) {
   const touchStartX = useRef<number | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [mountedPage, setMountedPage] = useState(pageIndex);
+  const [frame, setFrame] = useState<FrameSize>(FRAME_VUOTO);
+
+  const misuraContainer = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setFrame(dimensioniPaginaPreview(el.clientWidth, el.clientHeight));
+  }, []);
 
   useEffect(() => {
     if (open) setMountedPage(pageIndex);
@@ -53,6 +68,40 @@ export function FirmaPreviewFullscreenModal({
       document.body.style.overflow = prev;
     };
   }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    misuraContainer();
+
+    let frameId = 0;
+    let retries = 0;
+    const retryMisura = () => {
+      const el = scrollRef.current;
+      if (el && el.clientHeight > 0) {
+        misuraContainer();
+        return;
+      }
+      if (retries < 12) {
+        retries += 1;
+        frameId = window.requestAnimationFrame(retryMisura);
+      }
+    };
+    frameId = window.requestAnimationFrame(retryMisura);
+
+    const el = scrollRef.current;
+    if (!el) {
+      return () => window.cancelAnimationFrame(frameId);
+    }
+
+    const ro = new ResizeObserver(misuraContainer);
+    ro.observe(el);
+    window.addEventListener("resize", misuraContainer);
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      ro.disconnect();
+      window.removeEventListener("resize", misuraContainer);
+    };
+  }, [open, misuraContainer]);
 
   const vaiA = useCallback(
     (index: number) => {
@@ -81,6 +130,13 @@ export function FirmaPreviewFullscreenModal({
 
   if (!open) return null;
 
+  const { larghezza, altezza, scale } =
+    frame.larghezza > 0 && frame.altezza > 0
+      ? frame
+      : typeof window !== "undefined"
+        ? dimensioniPaginaPreview(window.innerWidth, window.innerHeight * 0.65)
+        : FRAME_VUOTO;
+
   return (
     <div
       className="fixed inset-0 z-[100] flex flex-col bg-[#0D1B2A]/95"
@@ -104,23 +160,30 @@ export function FirmaPreviewFullscreenModal({
       </header>
 
       <div
+        ref={scrollRef}
         className="relative min-h-0 flex-1 overflow-auto overscroll-contain bg-[#ECEEF2] touch-pan-x touch-pan-y"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
         <div className="flex min-h-full min-w-full items-start justify-center p-3 sm:p-6">
-          <iframe
-            key={`fullscreen-${mountedPage}-${html.length}`}
-            srcDoc={htmlPerPaginaPreviewFullscreen(html, mountedPage)}
-            title={`Preventivo pagina ${mountedPage + 1} ingrandita`}
-            className="block shrink-0 border-0 bg-white shadow-2xl"
-            style={{
-              width: PDF_TEMPLATE_WIDTH,
-              height: PDF_PAGE_HEIGHT,
-              maxWidth: "none",
-            }}
-            sandbox="allow-same-origin allow-scripts"
-          />
+          {larghezza > 0 && altezza > 0 ? (
+            <iframe
+              key={`fullscreen-${mountedPage}-${html.length}-${scale.toFixed(4)}`}
+              srcDoc={htmlPerPaginaPreviewFullscreen(html, mountedPage, scale)}
+              title={`Preventivo pagina ${mountedPage + 1} ingrandita`}
+              className="block shrink-0 border-0 bg-white shadow-2xl"
+              style={{
+                width: larghezza,
+                height: altezza,
+              }}
+              sandbox="allow-same-origin allow-scripts"
+            />
+          ) : (
+            <div
+              className="animate-pulse rounded-lg bg-white/70 shadow-2xl"
+              style={{ width: "min(100%, 320px)", aspectRatio: "800 / 1123" }}
+            />
+          )}
         </div>
       </div>
 
