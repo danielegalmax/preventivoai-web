@@ -1,8 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react'
+
+/** Imposta `true` per riattivare tab e form di registrazione. */
+const BETA_REGISTRAZIONE_APERTA = false
 
 export default function LoginPage() {
   const [mode, setMode] = useState<'login' | 'register'>('login')
@@ -20,7 +24,7 @@ export default function LoginPage() {
     setSuccess('')
     setLoading(true)
 
-    if (mode === 'register') {
+    if (mode === 'register' && BETA_REGISTRAZIONE_APERTA) {
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -54,34 +58,36 @@ export default function LoginPage() {
           Preventivo<span className="text-[#0E9F8E]">AI</span>
         </h1>
         <p className="text-sm text-gray-500 mt-1">
-          {mode === 'login' ? 'Bentornato' : 'Crea il tuo account gratuito'}
+          {mode === 'register' && BETA_REGISTRAZIONE_APERTA ? 'Crea il tuo account gratuito' : 'Bentornato'}
         </p>
       </div>
 
       <div className="w-full max-w-sm bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
 
-        <div className="flex bg-[#F7F8FA] rounded-xl p-1 mb-6">
-          <button
-            onClick={() => { setMode('login'); setError(''); setSuccess('') }}
-            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-              mode === 'login'
-                ? 'bg-white text-[#0D1B2A] shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Accedi
-          </button>
-          <button
-            onClick={() => { setMode('register'); setError(''); setSuccess('') }}
-            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-              mode === 'register'
-                ? 'bg-white text-[#0D1B2A] shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Registrati
-          </button>
-        </div>
+        {BETA_REGISTRAZIONE_APERTA ? (
+          <div className="flex bg-[#F7F8FA] rounded-xl p-1 mb-6">
+            <button
+              onClick={() => { setMode('login'); setError(''); setSuccess('') }}
+              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                mode === 'login'
+                  ? 'bg-white text-[#0D1B2A] shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Accedi
+            </button>
+            <button
+              onClick={() => { setMode('register'); setError(''); setSuccess('') }}
+              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                mode === 'register'
+                  ? 'bg-white text-[#0D1B2A] shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Registrati
+            </button>
+          </div>
+        ) : null}
 
         <button
           onClick={handleGoogle}
@@ -159,10 +165,19 @@ export default function LoginPage() {
             className="w-full py-2.5 bg-[#0D1B2A] text-white rounded-xl text-sm font-semibold hover:bg-[#162540] transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-1"
           >
             {loading && <Loader2 size={15} className="animate-spin" />}
-            {mode === 'login' ? 'Accedi' : 'Crea account'}
+            {mode === 'login' || !BETA_REGISTRAZIONE_APERTA ? 'Accedi' : 'Crea account'}
           </button>
 
         </form>
+
+        {!BETA_REGISTRAZIONE_APERTA ? (
+          <p className="text-center text-sm text-gray-500 mt-4">
+            Accesso su invito —{' '}
+            <Link href="/" className="text-[#0E9F8E] font-semibold hover:underline underline-offset-2">
+              richiedi l&apos;accesso
+            </Link>
+          </p>
+        ) : null}
 
         {mode === 'login' && (
           <p className="text-center text-xs text-gray-400 mt-4">
