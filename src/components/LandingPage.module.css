@@ -64,6 +64,10 @@
   text-align: center;
   position: relative;
   overflow: hidden;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .orb {
@@ -195,6 +199,7 @@
   display: flex;
   justify-content: center;
   animation: phoneIn 0.9s 0.4s ease both;
+  margin-top: auto;
 }
 
 @keyframes phoneIn {
@@ -834,6 +839,7 @@
 .chatAiDelay2 {
   animation-delay: 1.5s;
   opacity: 0;
+  margin-bottom: 6px;
 }
 
 @keyframes msgIn {
