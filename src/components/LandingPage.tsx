@@ -89,14 +89,14 @@ export function LandingPage() {
             <span className={styles.dot} />
             Accesso gratuito durante la beta
           </div>
-          <h1 className={styles.heroTitle}>
+          <h1>
             Dal preventivo
             <br />
             alla firma,
             <br />
             <em>tutto in un posto</em>
           </h1>
-          <p className={styles.heroSubtitle}>
+          <p>
             Crei il preventivo con l'AI in pochi minuti, lo invii per la firma online, incassi.
             Senza saltare tra app diverse.
           </p>
@@ -240,18 +240,18 @@ export function LandingPage() {
                   </div>
                   <div className={styles.firmaDocId}>PRV-2026-0180</div>
                 </div>
-                <div className={styles.firmaTitle}>Preventivo — Daniele</div>
+                <div className={styles.firmaTitle}>Preventivo — Mario Rossi</div>
                 <div className={styles.firmaRow}>
-                  <span>Riprese video sul posto</span>
-                  <span>114</span>
+                  <span>Intervento idraulico</span>
+                  <span>180</span>
                 </div>
                 <div className={styles.firmaRow}>
-                  <span>Montaggio 3 minuti</span>
+                  <span>Sostituzione tubazioni</span>
                   <span>200</span>
                 </div>
                 <div className={styles.firmaRow}>
-                  <span>Color grading</span>
-                  <span>150</span>
+                  <span>Materiali e raccordi</span>
+                  <span>84</span>
                 </div>
                 <div className={styles.firmaTotale}>
                   <span>TOTALE</span>
@@ -331,10 +331,10 @@ export function LandingPage() {
             <div className={styles.mockupWrap}>
               <div className={styles.chatScreen}>
                 <div className={`${styles.chatMsg} ${styles.chatUser}`}>
-                  Devo fare un preventivo per riprese video aziendali, 2 giorni, montaggio incluso,
-                  budget cliente 3000
+                  Devo fare un preventivo per un impianto idraulico, sostituzione tubazioni bagno,
+                  budget cliente 600
                 </div>
-                <div className={`${styles.chatMsg} ${styles.chatAi} ${styles.chatAiDelay1}`}>
+                <div className={`${styles.chatMsg} ${styles.chatAi}`}>
                   Ho creato il preventivo! Ecco le voci:
                 </div>
                 <div className={styles.chatTyping}>
@@ -342,9 +342,9 @@ export function LandingPage() {
                   <div className={styles.typingDot} />
                   <div className={styles.typingDot} />
                 </div>
-                <div className={`${styles.chatMsg} ${styles.chatAi} ${styles.chatAiDelay2}`}>
-                  Riprese video (2 gg) · 1.400 — Montaggio e color grading · 900 — Consegna file 4K
-                  · 200 — Totale: 2.500
+                <div className={`${styles.chatMsg} ${styles.chatAi}`}>
+                  Intervento idraulico (2h) · 180 — Sostituzione valvola · 90 — Materiali · 45 —
+                  Totale: 315
                 </div>
                 <div className={styles.chatInput}>
                   <div className={styles.chatInputText}>Aggiungi una voce...</div>
@@ -369,8 +369,8 @@ export function LandingPage() {
             <div className={styles.mockupWrap}>
               <div className={styles.pdfScreen}>
                 <div className={styles.pdfHeader2}>
-                  <div className={styles.pdfAzienda}>Daniele Galmazzi</div>
-                  <div className={styles.pdfSub2}>Video Production</div>
+                  <div className={styles.pdfAzienda}>Mario Rossi</div>
+                  <div className={styles.pdfSub2}>Idraulico</div>
                 </div>
                 <div className={styles.pdfSection}>
                   <div className={styles.pdfSectionTitle}>Servizi</div>
@@ -381,7 +381,7 @@ export function LandingPage() {
                 </div>
                 <div className={styles.pdfTotalBox}>
                   <div className={styles.pdfTotalLabel}>TOTALE</div>
-                  <div className={styles.pdfTotalAmount}>2.500</div>
+                  <div className={styles.pdfTotalAmount}>315</div>
                 </div>
                 <div className={styles.pdfActions}>
                   <div className={styles.pdfBtn}>Condividi</div>
@@ -415,10 +415,10 @@ export function LandingPage() {
               <div className={styles.statL}>gratis in beta</div>
             </div>
           </div>
-          <h2 className={cls("reveal", "d1", "proofTitle")}>
+          <h2 className={cls("reveal", "d1")}>
             Fatto per artigiani e professionisti italiani
           </h2>
-          <p className={cls("reveal", "d2", "proofText")}>
+          <p className={cls("reveal", "d2")}>
             Idraulici, elettricisti, fotografi, videomaker, consulenti. Se lavori con i clienti e
             hai bisogno di preventivi veloci, PreventivoAI è per te.
           </p>
@@ -426,8 +426,8 @@ export function LandingPage() {
       </section>
 
       <section className={styles.ctaBottom}>
-        <h2 className={cls("reveal", "ctaBottomTitle")}>Vuoi provarla durante la beta?</h2>
-        <p className={cls("reveal", "d1", "ctaBottomText")}>
+        <h2 className={cls("reveal")}>Vuoi provarla durante la beta?</h2>
+        <p className={cls("reveal", "d1")}>
           Sto aprendo l'accesso a un gruppo ristretto. In cambio ho bisogno del tuo feedback
           sincero su cosa funziona e cosa migliorare.
         </p>

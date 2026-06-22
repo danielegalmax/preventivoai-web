@@ -64,7 +64,7 @@
   text-align: center;
   position: relative;
   overflow: hidden;
-  min-height: 100dvh;
+  min-height: calc(100dvh - 57px);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -137,7 +137,7 @@
   50% { opacity: 0.5; transform: scale(1.3); }
 }
 
-.heroTitle {
+.heroContent h1 {
   font-size: clamp(30px, 7vw, 52px);
   font-weight: 800;
   color: white;
@@ -147,12 +147,12 @@
   animation: heroIn 0.7s ease both;
 }
 
-.heroTitle em {
+.heroContent h1 em {
   font-style: normal;
   color: #0e9f8e;
 }
 
-.heroSubtitle {
+.heroContent p {
   font-size: 16px;
   color: rgba(255, 255, 255, 0.55);
   line-height: 1.75;
@@ -199,7 +199,7 @@
   display: flex;
   justify-content: center;
   animation: phoneIn 0.9s 0.4s ease both;
-  margin-top: auto;
+  margin-top: 48px;
 }
 
 @keyframes phoneIn {
@@ -831,12 +831,12 @@
   animation: msgIn 0.4s ease both;
 }
 
-.chatAiDelay1 {
+.chatAi:nth-child(2) {
   animation-delay: 0.6s;
   opacity: 0;
 }
 
-.chatAiDelay2 {
+.chatAi:nth-child(4) {
   animation-delay: 1.5s;
   opacity: 0;
 }
@@ -853,9 +853,9 @@
   background: rgba(14, 159, 142, 0.15);
   border-radius: 8px;
   width: fit-content;
+  margin-bottom: 6px;
   animation: typingIn 0.3s 1s ease both;
   opacity: 0;
-  margin-bottom: 6px;
 }
 
 @keyframes typingIn {
@@ -1057,14 +1057,14 @@
   margin-top: 2px;
 }
 
-.proofTitle {
+.proof h2 {
   color: white;
   font-size: 20px;
   font-weight: 700;
   margin-bottom: 8px;
 }
 
-.proofText {
+.proof p {
   color: rgba(255, 255, 255, 0.6);
   font-size: 14px;
   line-height: 1.7;
@@ -1077,13 +1077,13 @@
   text-align: center;
 }
 
-.ctaBottomTitle {
+.ctaBottom h2 {
   font-size: 22px;
   font-weight: 700;
   margin-bottom: 12px;
 }
 
-.ctaBottomText {
+.ctaBottom p {
   color: #6b7280;
   font-size: 14px;
   line-height: 1.7;
