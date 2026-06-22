@@ -839,7 +839,6 @@
 .chatAiDelay2 {
   animation-delay: 1.5s;
   opacity: 0;
-  margin-bottom: 6px;
 }
 
 @keyframes msgIn {
@@ -856,6 +855,7 @@
   width: fit-content;
   animation: typingIn 0.3s 1s ease both;
   opacity: 0;
+  margin-bottom: 6px;
 }
 
 @keyframes typingIn {
