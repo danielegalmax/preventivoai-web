@@ -5,12 +5,13 @@ export default function PrivacyPage() {
     <LegalPageLayout title="Privacy Policy">
       <LegalSection title="1. Titolare del trattamento">
         <p>
-          Il titolare del trattamento dei dati personali è [nome/ragione sociale], con sede in
-          [indirizzo completo]. Per qualsiasi richiesta relativa alla privacy è possibile contattare
-          il titolare all&apos;indirizzo email: [email].
+          Il titolare del trattamento dei dati personali è l&apos;entità che gestisce il servizio
+          PreventivoAI. Estremi identificativi, sede e recapiti per le richieste in materia di privacy
+          sono pubblicati sul sito web del servizio o comunicati agli utenti nelle informative ufficiali.
         </p>
         <p>
-          [Eventuale DPO / responsabile privacy: [email DPO] — da completare se nominato.]
+          Ove nominato, il responsabile della protezione dei dati può essere contattato tramite i
+          canali indicati sul sito.
         </p>
       </LegalSection>
 
@@ -41,8 +42,8 @@ export default function PrivacyPage() {
             altra informazione che l&apos;utente registra nella propria anagrafica clienti.
           </li>
           <li>
-            <strong>Dati di utilizzo:</strong> log tecnici, eventi di utilizzo interni e analytics
-            finalizzati al miglioramento del servizio [specificare strumento analytics se applicabile].
+            <strong>Dati di utilizzo:</strong> log tecnici, eventi di utilizzo interni e, ove attivati,
+            dati analitici finalizzati al miglioramento del servizio.
           </li>
           <li>
             <strong>Dati di pagamento:</strong> gestiti tramite Stripe; PreventivoAI non conserva i dati
@@ -73,9 +74,9 @@ export default function PrivacyPage() {
         </p>
         <p>
           L&apos;utente che inserisce dati dei propri clienti agisce, per tali dati, come titolare autonomo
-          del trattamento o responsabile secondo la propria organizzazione; [nome/ragione sociale] tratta
-          tali dati come fornitore del servizio, in qualità di responsabile del trattamento o subfornitore
-          secondo gli accordi applicabili [da formalizzare con DPA se necessario].
+          del trattamento o responsabile secondo la propria organizzazione; il titolare del servizio tratta
+          tali dati quale fornitore della piattaforma, nei limiti previsti dal rapporto contrattuale e
+          dalla normativa applicabile.
         </p>
       </LegalSection>
 
@@ -130,8 +131,8 @@ export default function PrivacyPage() {
           <li>opposizione al trattamento, nei casi previsti dalla legge.</li>
         </ul>
         <p>
-          Le richieste possono essere inviate a [email]. È inoltre possibile eliminare l&apos;account
-          direttamente dalle impostazioni dell&apos;applicazione.
+          Le richieste possono essere inviate tramite i recapiti pubblicati sul sito del servizio. È
+          inoltre possibile eliminare l&apos;account direttamente dalle impostazioni dell&apos;applicazione.
         </p>
         <p>
           L&apos;interessato ha diritto di proporre reclamo all&apos;Autorità Garante per la protezione dei
@@ -141,7 +142,7 @@ export default function PrivacyPage() {
 
       <LegalSection title="9. Sicurezza">
         <p>
-          [nome/ragione sociale] adotta misure tecniche e organizzative adeguate a proteggere i dati da
+          Il titolare del servizio adotta misure tecniche e organizzative adeguate a proteggere i dati da
           accessi non autorizzati, perdita, distruzione o divulgazione. Nessun sistema è tuttavia
           completamente immune da rischi; si invita l&apos;utente a proteggere le proprie credenziali.
         </p>
@@ -150,13 +151,14 @@ export default function PrivacyPage() {
       <LegalSection title="10. Modifiche alla presente informativa">
         <p>
           La presente Privacy Policy può essere aggiornata periodicamente. La versione aggiornata sarà
-          pubblicata su questa pagina con indicazione della data di ultimo aggiornamento.
+          pubblicata su questa pagina.
         </p>
       </LegalSection>
 
       <LegalSection title="11. Contatti">
         <p>
-          Per domande sulla privacy o per esercitare i propri diritti: [email].
+          Per domande sulla privacy o per esercitare i propri diritti è possibile contattare il titolare
+          del trattamento tramite i recapiti pubblicati sul sito web del servizio.
         </p>
       </LegalSection>
     </LegalPageLayout>

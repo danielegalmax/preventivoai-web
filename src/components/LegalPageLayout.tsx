@@ -32,7 +32,7 @@ export function LegalPageLayout({ title, children }: Props) {
       <main className="mx-auto w-full max-w-3xl flex-1 px-5 py-10 sm:py-12">
         <h1 className="text-2xl font-semibold text-[#0D1B2A] tracking-tight sm:text-3xl">{title}</h1>
         <p className="mt-2 text-sm text-[#6B7280]">
-          Ultimo aggiornamento: [data di pubblicazione]
+          Documento soggetto ad aggiornamento periodico.
         </p>
         <article className="mt-8 space-y-8 text-[#0D1B2A]/85">
           {children}

@@ -6,8 +6,9 @@ export default function TerminiPage() {
       <LegalSection title="1. Oggetto del servizio">
         <p>
           PreventivoAI è uno strumento software per la creazione e la gestione di preventivi digitali,
-          la firma online dei documenti e il tracciamento degli incassi. Il servizio è erogato da{' '}
-          [nome società / ragione sociale] con sede in [indirizzo completo].
+          la firma online dei documenti e il tracciamento degli incassi. Il servizio è erogato dal
+          titolare della piattaforma (di seguito, il «Titolare»), i cui estremi identificativi e
+          recapiti sono disponibili sul sito web del servizio.
         </p>
         <p>
           L&apos;utilizzo di PreventivoAI implica l&apos;accettazione integrale dei presenti Termini di servizio.
@@ -17,10 +18,10 @@ export default function TerminiPage() {
       <LegalSection title="2. Accesso in beta">
         <p>
           Durante la fase beta l&apos;accesso al servizio è riservato agli utenti invitati. L&apos;invito è
-          personale e non trasferibile salvo diverso accordo scritto con [nome società].
+          personale e non trasferibile salvo diverso accordo scritto con il Titolare.
         </p>
         <p>
-          Il servizio è gratuito per tutta la durata della fase beta. [nome società] si riserva il diritto
+          Il servizio è gratuito per tutta la durata della fase beta. Il Titolare si riserva il diritto
           di introdurre piani a pagamento in una fase successiva, con preavviso ragionevole agli utenti
           registrati.
         </p>
@@ -48,7 +49,7 @@ export default function TerminiPage() {
           e di rispettare la normativa applicabile, inclusa la privacy dei propri clienti.
         </p>
         <p>
-          [nome società] non verifica l&apos;accuratezza, la liceità o la completezza dei contenuti inseriti
+          Il Titolare non verifica l&apos;accuratezza, la liceità o la completezza dei contenuti inseriti
           dagli utenti e non risponde verso terzi per l&apos;uso che l&apos;utente fa del servizio.
         </p>
       </LegalSection>
@@ -59,7 +60,7 @@ export default function TerminiPage() {
           momento, anche senza preavviso, per motivi tecnici, di sicurezza o di sviluppo del prodotto.
         </p>
         <p>
-          [nome società] non garantisce la continuità del servizio né l&apos;assenza di errori, bug o
+          Il Titolare non garantisce la continuità del servizio né l&apos;assenza di errori, bug o
           perdite di dati. Si raccomanda di conservare copie dei documenti rilevanti anche al di fuori
           della piattaforma.
         </p>
@@ -83,15 +84,25 @@ export default function TerminiPage() {
 
       <LegalSection title="7. Proprietà intellettuale">
         <p>
-          Il software, il marchio PreventivoAI, l&apos;interfaccia e i materiali forniti da [nome società]
-          restano di proprietà di [nome società] o dei rispettivi titolari. L&apos;utente conserva la
-          titolarità dei contenuti che inserisce nel servizio.
+          Il software, l&apos;interfaccia, la documentazione, i testi, le grafiche e gli altri elementi
+          del servizio — inclusa, ove applicabile, la denominazione «PreventivoAI» — sono protetti dalle
+          norme vigenti in materia di proprietà intellettuale e restano di titolarità del Titolare o di
+          terzi che ne abbiano concesso l&apos;utilizzo.
+        </p>
+        <p>
+          Nulla nei presenti Termini attribuisce all&apos;utente diritti sul marchio, sul nome commerciale,
+          sul dominio o su altri segni distintivi oltre all&apos;uso strettamente necessario per fruire del
+          servizio secondo quanto previsto qui.
+        </p>
+        <p>
+          L&apos;utente conserva la titolarità dei contenuti che inserisce autonomamente nel servizio e
+          concede al Titolare una licenza limitata a trattarli per l&apos;erogazione della piattaforma.
         </p>
       </LegalSection>
 
       <LegalSection title="8. Limitazione di responsabilità">
         <p>
-          Nei limiti consentiti dalla legge applicabile, [nome società] non è responsabile per danni
+          Nei limiti consentiti dalla legge applicabile, il Titolare non è responsabile per danni
           indiretti, perdita di profitto, perdita di dati o mancati guadagni derivanti dall&apos;uso o
           dall&apos;impossibilità di usare il servizio durante la fase beta.
         </p>
@@ -100,14 +111,16 @@ export default function TerminiPage() {
       <LegalSection title="9. Legge applicabile e foro competente">
         <p>
           I presenti Termini sono regolati dalla legge italiana. Per ogni controversia relativa
-          all&apos;interpretazione o esecuzione dei presenti Termini è competente in via esclusiva il
-          Foro di [città], salvo i casi inderogabili previsti dalla legge a tutela dei consumatori.
+          all&apos;interpretazione o esecuzione dei presenti Termini è competente il foro del luogo di
+          residenza o domicilio del consumatore, se applicabile, ovvero il foro territorialmente
+          competente secondo la legge, salvo i casi inderogabili previsti dalla normativa vigente.
         </p>
       </LegalSection>
 
       <LegalSection title="10. Contatti">
         <p>
-          Per informazioni sui presenti Termini è possibile scrivere a: [email contatto].
+          Per informazioni sui presenti Termini è possibile contattare il Titolare tramite i recapiti
+          pubblicati sul sito web del servizio.
         </p>
       </LegalSection>
     </LegalPageLayout>
