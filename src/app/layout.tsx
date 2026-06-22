@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PreventivoAI",
-  description: "Preventivi professionali con intelligenza artificiale",
+  title: "PreventivoAI — Beta aperta",
+  description:
+    "Preventivi professionali con AI, firma digitale, pagamento Stripe e notifiche. Richiedi l'accesso gratuito alla beta.",
 };
 
 export default function RootLayout({
