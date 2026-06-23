@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-
-async function confermaAcquisto(sessionId: string): Promise<string | null> {
+async function confermaAcquisto(
+  supabaseAdmin: SupabaseClient,
+  sessionId: string
+): Promise<string | null> {
   const { data: acquisto, error: acquistoError } = await supabaseAdmin
     .from('acquisti_prodotti')
     .select('id, prodotto_id, pagato')
@@ -38,6 +36,10 @@ async function confermaAcquisto(sessionId: string): Promise<string | null> {
 
 export async function POST(req: NextRequest) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 
   try {
     const { session_id } = await req.json()
@@ -58,7 +60,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const linkDownload = await confermaAcquisto(session_id)
+    const linkDownload = await confermaAcquisto(supabaseAdmin, session_id)
 
     if (!linkDownload) {
       return NextResponse.json(

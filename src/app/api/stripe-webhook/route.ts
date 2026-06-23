@@ -1,20 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-
-const resend = new Resend(process.env.RESEND_API_KEY)
 
 function normalizeDownloadUrl(link: string): string {
   return link.startsWith('http') ? link : `https://${link}`
 }
 
-async function confermaAcquisto(sessionId: string): Promise<{
+async function confermaAcquisto(
+  supabaseAdmin: SupabaseClient,
+  sessionId: string
+): Promise<{
   email_cliente: string
   link_download: string
   titolo: string
@@ -86,6 +82,7 @@ async function inviaEmailDownload(
     return
   }
 
+  const resend = new Resend(process.env.RESEND_API_KEY)
   const { error } = await resend.emails.send({
     from: 'PreventivoAI <onboarding@resend.dev>',
     to: emailCliente,
@@ -106,6 +103,10 @@ export async function POST(req: NextRequest) {
   }
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 
   const body = await req.text()
   const signature = req.headers.get('stripe-signature')
@@ -128,7 +129,7 @@ export async function POST(req: NextRequest) {
 
     if (session.payment_status === 'paid' && session.id) {
       try {
-        const risultato = await confermaAcquisto(session.id)
+        const risultato = await confermaAcquisto(supabaseAdmin, session.id)
 
         if (risultato && !risultato.giaConfermato) {
           try {
