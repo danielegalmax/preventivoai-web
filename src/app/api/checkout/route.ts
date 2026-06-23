@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 import { getProdottoBySlug, getStripeAccountArtigiano } from '@/lib/prodotti'
+import { checkRateLimit } from '@/lib/rateLimit'
 
 function baseUrl(req: NextRequest): string {
   const origin = req.headers.get('origin')
@@ -13,6 +14,12 @@ function baseUrl(req: NextRequest): string {
 }
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for') ?? 'unknown'
+  const allowed = checkRateLimit(`checkout:${ip}`, 5, 60000)
+  if (!allowed) {
+    return NextResponse.json({ error: 'Troppe richieste' }, { status: 429 })
+  }
+
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
