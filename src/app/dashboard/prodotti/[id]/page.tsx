@@ -6,9 +6,11 @@ import { supabase } from '@/lib/supabase'
 import {
   getProdottiUtente,
   aggiornaProdotto,
+  normalizzaLinkPreviewMultipli,
+  preparaLinkPreviewPerSalvataggio,
   type ProdottoDigitale,
 } from '@/lib/prodotti'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft, Loader2, Plus, X } from 'lucide-react'
 
 export default function ModificaProdottoPage() {
   const params = useParams()
@@ -21,10 +23,10 @@ export default function ModificaProdottoPage() {
     titolo: '',
     descrizione: '',
     prezzo: '',
-    link_preview: '',
     link_download: '',
     attivo: true,
   })
+  const [linkPreviewMultipli, setLinkPreviewMultipli] = useState<string[]>([])
 
   useEffect(() => {
     carica()
@@ -51,10 +53,15 @@ export default function ModificaProdottoPage() {
         titolo: trovato.titolo,
         descrizione: trovato.descrizione ?? '',
         prezzo: String(trovato.prezzo),
-        link_preview: trovato.link_preview ?? '',
         link_download: trovato.link_download,
         attivo: trovato.attivo,
       })
+      setLinkPreviewMultipli(
+        normalizzaLinkPreviewMultipli(
+          trovato.link_preview_multipli,
+          trovato.link_preview
+        )
+      )
     } catch (err) {
       console.error(err)
     }
@@ -63,6 +70,20 @@ export default function ModificaProdottoPage() {
 
   function set(key: keyof typeof form, val: string | boolean) {
     setForm((f) => ({ ...f, [key]: val }))
+  }
+
+  function aggiungiLinkPreview() {
+    setLinkPreviewMultipli((prev) => [...prev, ''])
+  }
+
+  function rimuoviLinkPreview(index: number) {
+    setLinkPreviewMultipli((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  function aggiornaLinkPreview(index: number, val: string) {
+    setLinkPreviewMultipli((prev) =>
+      prev.map((url, i) => (i === index ? val : url))
+    )
   }
 
   async function salva() {
@@ -79,11 +100,13 @@ export default function ModificaProdottoPage() {
 
     setSaving(true)
     try {
+      const preview = preparaLinkPreviewPerSalvataggio(linkPreviewMultipli)
       await aggiornaProdotto(prodotto.id, {
         titolo: form.titolo.trim(),
         descrizione: form.descrizione.trim() || null,
         prezzo,
-        link_preview: form.link_preview.trim() || null,
+        link_preview_multipli: preview.link_preview_multipli,
+        link_preview: preview.link_preview,
         link_download: form.link_download.trim(),
         attivo: form.attivo,
       })
@@ -165,12 +188,34 @@ export default function ModificaProdottoPage() {
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
               Link anteprima
             </label>
-            <input
-              value={form.link_preview}
-              onChange={(e) => set('link_preview', e.target.value)}
-              placeholder="YouTube, Vimeo, qualsiasi URL"
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-[#F7F8FA] focus:bg-white focus:border-[#0E9F8E] outline-none"
-            />
+            <div className="space-y-2">
+              {linkPreviewMultipli.map((url, index) => (
+                <div key={index} className="flex gap-2">
+                  <input
+                    value={url}
+                    onChange={(e) => aggiornaLinkPreview(index, e.target.value)}
+                    placeholder="YouTube, Vimeo, Google Drive, qualsiasi URL..."
+                    className="flex-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-[#F7F8FA] focus:bg-white focus:border-[#0E9F8E] outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => rimuoviLinkPreview(index)}
+                    className="px-3 py-2.5 border border-gray-200 rounded-xl text-gray-500 hover:border-red-300 hover:text-red-500 transition-colors"
+                    aria-label="Rimuovi link anteprima"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={aggiungiLinkPreview}
+              className="mt-2 flex items-center gap-1.5 text-sm font-medium text-[#0E9F8E] hover:text-[#0b8a7a] transition-colors"
+            >
+              <Plus size={16} />
+              Aggiungi link anteprima
+            </button>
           </div>
 
           <div className="mb-4">

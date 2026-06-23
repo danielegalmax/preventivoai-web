@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { getProdottoBySlug, type ProdottoPubblico } from '@/lib/prodotti'
+import {
+  getProdottoBySlug,
+  normalizzaLinkPreviewMultipli,
+  type ProdottoPubblico,
+} from '@/lib/prodotti'
 import { formatEuro } from '@/lib/formatEuro'
 import { Loader2, ExternalLink } from 'lucide-react'
 
@@ -71,6 +75,10 @@ export default function StorePage() {
   }
 
   const prezzoFormatted = formatEuro(prodotto.prezzo)
+  const linkAnteprima = normalizzaLinkPreviewMultipli(
+    prodotto.link_preview_multipli,
+    prodotto.link_preview
+  )
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0D1B2A] to-[#1a2f45] flex flex-col">
@@ -97,16 +105,29 @@ export default function StorePage() {
               </div>
             )}
 
-            {prodotto.link_preview && (
-              <a
-                href={prodotto.link_preview}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-6 flex items-center justify-center gap-2 w-full py-3 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:border-[#0E9F8E] hover:text-[#0E9F8E] transition-all"
+            {linkAnteprima.length > 0 && (
+              <div
+                className={`mt-6 flex gap-2 ${
+                  linkAnteprima.length > 1
+                    ? 'flex-col sm:flex-row sm:flex-wrap'
+                    : 'flex-col'
+                }`}
               >
-                <ExternalLink size={16} />
-                Guarda anteprima
-              </a>
+                {linkAnteprima.map((url, index) => (
+                  <a
+                    key={`${url}-${index}`}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-1 items-center justify-center gap-2 min-w-0 py-3 px-4 border border-[#0E9F8E] rounded-xl text-sm font-medium text-[#0E9F8E] hover:bg-[#E1F5EE] transition-all"
+                  >
+                    <ExternalLink size={16} className="shrink-0" />
+                    {linkAnteprima.length === 1
+                      ? 'Guarda anteprima'
+                      : `Anteprima ${index + 1}`}
+                  </a>
+                ))}
+              </div>
             )}
 
             <hr className="my-8 border-gray-100" />

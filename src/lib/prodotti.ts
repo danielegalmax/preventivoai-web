@@ -8,6 +8,7 @@ export interface ProdottoDigitale {
   prezzo: number
   slug: string
   link_preview: string | null
+  link_preview_multipli: string[]
   link_download: string
   attivo: boolean
   created_at: string
@@ -21,6 +22,7 @@ export interface ProdottoPubblico {
   prezzo: number
   slug: string
   link_preview: string | null
+  link_preview_multipli: string[]
   attivo: boolean
 }
 
@@ -39,6 +41,7 @@ export interface CreaProdottoInput {
   descrizione?: string | null
   prezzo: number
   link_preview?: string | null
+  link_preview_multipli?: string[]
   link_download: string
   attivo?: boolean
 }
@@ -48,12 +51,34 @@ export interface AggiornaProdottoInput {
   descrizione?: string | null
   prezzo?: number
   link_preview?: string | null
+  link_preview_multipli?: string[]
   link_download?: string
   attivo?: boolean
 }
 
 const CAMPI_PUBBLICI =
-  'id, user_id, titolo, descrizione, prezzo, slug, link_preview, attivo'
+  'id, user_id, titolo, descrizione, prezzo, slug, link_preview, link_preview_multipli, attivo'
+
+export function normalizzaLinkPreviewMultipli(
+  multipli: string[] | null | undefined,
+  legacy: string | null | undefined
+): string[] {
+  const fromMulti = (multipli ?? []).map((s) => s.trim()).filter(Boolean)
+  if (fromMulti.length > 0) return fromMulti
+  if (legacy?.trim()) return [legacy.trim()]
+  return []
+}
+
+export function preparaLinkPreviewPerSalvataggio(urls: string[]): {
+  link_preview_multipli: string[]
+  link_preview: string | null
+} {
+  const link_preview_multipli = urls.map((s) => s.trim()).filter(Boolean)
+  return {
+    link_preview_multipli,
+    link_preview: link_preview_multipli[0] ?? null,
+  }
+}
 
 export async function getStripeAccountArtigiano(
   userId: string
@@ -109,6 +134,10 @@ export async function creaProdotto(
   data: CreaProdottoInput
 ): Promise<ProdottoDigitale> {
   const slug = generaSlug(data.titolo)
+  const preview = preparaLinkPreviewPerSalvataggio(
+    data.link_preview_multipli ??
+      (data.link_preview ? [data.link_preview] : [])
+  )
 
   const { data: prodotto, error } = await supabase
     .from('prodotti_digitali')
@@ -118,7 +147,8 @@ export async function creaProdotto(
       descrizione: data.descrizione ?? null,
       prezzo: data.prezzo,
       slug,
-      link_preview: data.link_preview ?? null,
+      link_preview: preview.link_preview,
+      link_preview_multipli: preview.link_preview_multipli,
       link_download: data.link_download,
       attivo: data.attivo ?? true,
     })
@@ -133,9 +163,17 @@ export async function aggiornaProdotto(
   id: string,
   data: AggiornaProdottoInput
 ): Promise<ProdottoDigitale> {
+  const updateData: AggiornaProdottoInput = { ...data }
+
+  if (data.link_preview_multipli !== undefined) {
+    const preview = preparaLinkPreviewPerSalvataggio(data.link_preview_multipli)
+    updateData.link_preview_multipli = preview.link_preview_multipli
+    updateData.link_preview = preview.link_preview
+  }
+
   const { data: prodotto, error } = await supabase
     .from('prodotti_digitali')
-    .update(data)
+    .update(updateData)
     .eq('id', id)
     .select()
     .single()

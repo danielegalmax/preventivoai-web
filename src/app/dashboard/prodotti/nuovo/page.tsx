@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { creaProdotto } from '@/lib/prodotti'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { creaProdotto, preparaLinkPreviewPerSalvataggio } from '@/lib/prodotti'
+import { ArrowLeft, Loader2, Plus, X } from 'lucide-react'
 
 export default function NuovoProdottoPage() {
   const [userId, setUserId] = useState<string | null>(null)
@@ -13,9 +13,9 @@ export default function NuovoProdottoPage() {
     titolo: '',
     descrizione: '',
     prezzo: '',
-    link_preview: '',
     link_download: '',
   })
+  const [linkPreviewMultipli, setLinkPreviewMultipli] = useState<string[]>([])
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -32,6 +32,20 @@ export default function NuovoProdottoPage() {
     setForm((f) => ({ ...f, [key]: val }))
   }
 
+  function aggiungiLinkPreview() {
+    setLinkPreviewMultipli((prev) => [...prev, ''])
+  }
+
+  function rimuoviLinkPreview(index: number) {
+    setLinkPreviewMultipli((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  function aggiornaLinkPreview(index: number, val: string) {
+    setLinkPreviewMultipli((prev) =>
+      prev.map((url, i) => (i === index ? val : url))
+    )
+  }
+
   async function salva() {
     if (!userId || !form.titolo.trim() || !form.link_download.trim()) {
       alert('Titolo e link download sono obbligatori')
@@ -46,12 +60,14 @@ export default function NuovoProdottoPage() {
 
     setSaving(true)
     try {
+      const preview = preparaLinkPreviewPerSalvataggio(linkPreviewMultipli)
       await creaProdotto({
         user_id: userId,
         titolo: form.titolo.trim(),
         descrizione: form.descrizione.trim() || null,
         prezzo,
-        link_preview: form.link_preview.trim() || null,
+        link_preview_multipli: preview.link_preview_multipli,
+        link_preview: preview.link_preview,
         link_download: form.link_download.trim(),
       })
       window.location.href = '/dashboard/prodotti'
@@ -135,12 +151,34 @@ export default function NuovoProdottoPage() {
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
               Link anteprima
             </label>
-            <input
-              value={form.link_preview}
-              onChange={(e) => set('link_preview', e.target.value)}
-              placeholder="YouTube, Vimeo, qualsiasi URL"
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-[#F7F8FA] focus:bg-white focus:border-[#0E9F8E] outline-none"
-            />
+            <div className="space-y-2">
+              {linkPreviewMultipli.map((url, index) => (
+                <div key={index} className="flex gap-2">
+                  <input
+                    value={url}
+                    onChange={(e) => aggiornaLinkPreview(index, e.target.value)}
+                    placeholder="YouTube, Vimeo, Google Drive, qualsiasi URL..."
+                    className="flex-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-[#F7F8FA] focus:bg-white focus:border-[#0E9F8E] outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => rimuoviLinkPreview(index)}
+                    className="px-3 py-2.5 border border-gray-200 rounded-xl text-gray-500 hover:border-red-300 hover:text-red-500 transition-colors"
+                    aria-label="Rimuovi link anteprima"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={aggiungiLinkPreview}
+              className="mt-2 flex items-center gap-1.5 text-sm font-medium text-[#0E9F8E] hover:text-[#0b8a7a] transition-colors"
+            >
+              <Plus size={16} />
+              Aggiungi link anteprima
+            </button>
           </div>
 
           <div>
