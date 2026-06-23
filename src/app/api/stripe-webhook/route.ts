@@ -13,6 +13,8 @@ async function confermaAcquisto(
   link_download: string
   titolo: string
   giaConfermato: boolean
+  prodotto_id: string
+  importo: number
 } | null> {
   const { data: acquisto, error: acquistoError } = await supabaseAdmin
     .from('acquisti_prodotti')
@@ -36,7 +38,7 @@ async function confermaAcquisto(
 
   const { data: prodotto, error: prodottoError } = await supabaseAdmin
     .from('prodotti_digitali')
-    .select('link_download, titolo')
+    .select('link_download, titolo, prezzo')
     .eq('id', acquisto.prodotto_id)
     .single()
 
@@ -47,6 +49,8 @@ async function confermaAcquisto(
     link_download: prodotto.link_download as string,
     titolo: prodotto.titolo as string,
     giaConfermato,
+    prodotto_id: acquisto.prodotto_id,
+    importo: prodotto.prezzo as number,
   }
 }
 
@@ -206,6 +210,41 @@ export async function POST(req: NextRequest) {
               )
             } catch (err) {
               console.error('webhook inviaEmailDownload error:', err)
+            }
+
+            try {
+              const { data: prodottoCompleto } = await supabaseAdmin
+                .from('prodotti_digitali')
+                .select('user_id, titolo')
+                .eq('id', risultato.prodotto_id)
+                .single()
+
+              if (prodottoCompleto) {
+                const { error: notificaError } = await supabaseAdmin
+                  .from('notifiche')
+                  .insert({
+                    user_id: prodottoCompleto.user_id,
+                    tipo: 'prodotto_venduto',
+                    preventivo_id: null,
+                    invio_id: null,
+                    titolo: 'Prodotto venduto!',
+                    messaggio: `Hai ricevuto un pagamento per "${risultato.titolo}" da ${risultato.email_cliente}`,
+                    payload: {
+                      prodotto_id: risultato.prodotto_id,
+                      email_cliente: risultato.email_cliente,
+                      importo: risultato.importo,
+                    },
+                  })
+
+                if (notificaError) {
+                  console.error(
+                    'webhook notifica prodotto venduto error:',
+                    notificaError
+                  )
+                }
+              }
+            } catch (err) {
+              console.error('webhook notifica prodotto venduto error:', err)
             }
           }
         } catch (err) {
