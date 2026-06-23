@@ -8,7 +8,6 @@ interface StatoGenerale {
   utenti_attivi_7gg: number
   preventivi_totali: number
   preventivi_oggi: number
-  pdf_generati: number
   token_input_totali: number
   token_output_totali: number
   costo_totale_euro: number
@@ -248,7 +247,6 @@ export default function AdminDashboard() {
       utenti_attivi_7gg: sessioniAttive?.length || 0,
       preventivi_totali: preventiviTotali || 0,
       preventivi_oggi: preventiviOggi?.length || 0,
-      pdf_generati: preventiviOggi?.length || 0,
       token_input_totali: tokenInput,
       token_output_totali: tokenOutput,
       costo_totale_euro: costoTotale,

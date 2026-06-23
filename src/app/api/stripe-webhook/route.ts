@@ -139,14 +139,12 @@ async function inviaEmailDownload(
     return
   }
 
-  const { data, error } = await resend.emails.send({
+  const { error } = await resend.emails.send({
     from: 'PreventivoAI <onboarding@resend.dev>',
     to: emailCliente,
     subject: `Il tuo acquisto è pronto — ${titolo}`,
     html: buildDownloadEmailHtml(titolo, linkDownload),
   })
-  console.log('Resend result:', JSON.stringify(data))
-  console.log('Resend error:', JSON.stringify(error))
 
   if (error) {
     throw new Error(error.message)
@@ -154,8 +152,6 @@ async function inviaEmailDownload(
 }
 
 export async function POST(req: NextRequest) {
-  console.log('Webhook ricevuto')
-
   try {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
     const skipVerificaFirma =
@@ -172,7 +168,6 @@ export async function POST(req: NextRequest) {
     let event: Stripe.Event
 
     if (skipVerificaFirma) {
-      console.log('Debug: verifica firma webhook skippata')
       event = JSON.parse(body) as Stripe.Event
     } else {
       const signature = req.headers.get('stripe-signature')
@@ -190,11 +185,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    console.log('Firma verificata, evento:', event.type)
-
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session
-      console.log('Processando checkout:', session.id)
 
       if (session.payment_status === 'paid' && session.id) {
         try {

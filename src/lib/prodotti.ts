@@ -191,6 +191,7 @@ export async function eliminaProdotto(id: string): Promise<void> {
   if (error) throw error
 }
 
+// unused
 export async function creaAcquisto(
   prodottoId: string,
   emailCliente: string,
@@ -211,6 +212,7 @@ export async function creaAcquisto(
   return data as AcquistoProdotto
 }
 
+// unused
 export async function confermaAcquisto(
   sessionId: string
 ): Promise<string | null> {
@@ -242,6 +244,7 @@ export async function confermaAcquisto(
   return prodotto.link_download as string
 }
 
+// unused
 export async function getAcquistiProdotto(
   prodottoId: string
 ): Promise<AcquistoProdotto[]> {

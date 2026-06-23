@@ -20,7 +20,7 @@ type PaginaFirma =
       titolo?: string | null;
       pdfOriginaleUrl?: string;
     }
-  | { stato: "gia_firmato"; nomeCliente: string; pdfFirmatoUrl?: string; firmatoAt?: string }
+  | { stato: "gia_firmato"; nomeCliente: string; pdfFirmatoUrl?: string }
   | { stato: "scaduto" | "revocato" | "link_non_valido"; nomeCliente?: string; nomeAzienda?: string }
   | { stato: "successo"; pdfFirmatoUrl?: string; nomeCliente?: string };
 
@@ -74,7 +74,6 @@ export default function FirmaPreventivoPage() {
             stato: "gia_firmato",
             nomeCliente: data.nomeCliente,
             pdfFirmatoUrl: data.pdfFirmatoUrl,
-            firmatoAt: data.firmatoAt,
           });
         } else {
           setPagina({
