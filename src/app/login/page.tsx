@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react'
 
@@ -9,6 +10,8 @@ import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react'
 const BETA_REGISTRAZIONE_APERTA = false
 
 export default function LoginPage() {
+  const router = useRouter()
+  const params = useSearchParams()
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -36,9 +39,11 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) setError('Email o password non corretti.')
       else {
-        const params = new URLSearchParams(window.location.search)
-        const next = params.get('next') ?? '/dashboard'
-        window.location.href = next
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          router.push(params.get('next') ?? '/dashboard')
+          router.refresh()
+        }
       }
     }
 
@@ -49,7 +54,7 @@ export default function LoginPage() {
     setGoogleLoading(true)
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/dashboard` }
+      options: { redirectTo: `${window.location.origin}/auth/callback` }
     })
     setGoogleLoading(false)
   }
