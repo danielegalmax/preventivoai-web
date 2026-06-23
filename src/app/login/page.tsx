@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
@@ -9,7 +9,7 @@ import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react'
 /** Imposta `true` per riattivare tab e form di registrazione. */
 const BETA_REGISTRAZIONE_APERTA = false
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter()
   const params = useSearchParams()
   const [mode, setMode] = useState<'login' | 'register'>('login')
@@ -206,5 +206,13 @@ export default function LoginPage() {
       </p>
 
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#F7F8FA]" />}>
+      <LoginContent />
+    </Suspense>
   )
 }
