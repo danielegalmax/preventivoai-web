@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
     const origin = baseUrl(req)
     const unitAmount = Math.round(prodotto.prezzo * 100)
-    const applicationFeeAmount = Math.round(unitAmount * 0.01)
+    const applicationFeeAmount = Math.round(unitAmount * 0.005)
     const stripeAccountId = await getStripeAccountArtigiano(prodotto.user_id)
 
     const sessionBase: Stripe.Checkout.SessionCreateParams = {
