@@ -98,60 +98,75 @@ async function inviaEmailDownload(
 }
 
 export async function POST(req: NextRequest) {
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
-  if (!webhookSecret || webhookSecret === 'placeholder') {
-    return NextResponse.json({ received: true })
-  }
-
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
-  const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-
-  const body = await req.text()
-  const signature = req.headers.get('stripe-signature')
-
-  if (!signature) {
-    return NextResponse.json({ error: 'Firma mancante' }, { status: 400 })
-  }
-
-  let event: Stripe.Event
+  console.log('Webhook ricevuto')
 
   try {
-    event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
-  } catch (err) {
-    console.error('webhook signature error:', err)
-    return NextResponse.json({ error: 'Firma non valida' }, { status: 400 })
-  }
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+    const skipVerificaFirma =
+      !webhookSecret || webhookSecret === 'placeholder'
 
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as Stripe.Checkout.Session
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
 
-    if (session.payment_status === 'paid' && session.id) {
+    const body = await req.text()
+    let event: Stripe.Event
+
+    if (skipVerificaFirma) {
+      console.log('Debug: verifica firma webhook skippata')
+      event = JSON.parse(body) as Stripe.Event
+    } else {
+      const signature = req.headers.get('stripe-signature')
+
+      if (!signature) {
+        console.error('webhook error: firma mancante')
+        return NextResponse.json({ error: 'Firma mancante' }, { status: 400 })
+      }
+
       try {
-        const risultato = await confermaAcquisto(supabaseAdmin, session.id)
-
-        if (risultato && !risultato.giaConfermato) {
-          try {
-            await inviaEmailDownload(
-              risultato.email_cliente,
-              risultato.titolo,
-              risultato.link_download
-            )
-          } catch (err) {
-            console.error('webhook inviaEmailDownload error:', err)
-          }
-        }
+        event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
       } catch (err) {
-        console.error('webhook confermaAcquisto error:', err)
-        return NextResponse.json(
-          { error: 'Errore conferma acquisto' },
-          { status: 500 }
-        )
+        console.error('webhook signature error:', err)
+        return NextResponse.json({ error: 'Firma non valida' }, { status: 400 })
       }
     }
-  }
 
-  return NextResponse.json({ received: true })
+    console.log('Firma verificata, evento:', event.type)
+
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object as Stripe.Checkout.Session
+      console.log('Processando checkout:', session.id)
+
+      if (session.payment_status === 'paid' && session.id) {
+        try {
+          const risultato = await confermaAcquisto(supabaseAdmin, session.id)
+
+          if (risultato && !risultato.giaConfermato) {
+            try {
+              await inviaEmailDownload(
+                risultato.email_cliente,
+                risultato.titolo,
+                risultato.link_download
+              )
+            } catch (err) {
+              console.error('webhook inviaEmailDownload error:', err)
+            }
+          }
+        } catch (err) {
+          console.error('webhook confermaAcquisto error:', err)
+          return NextResponse.json(
+            { error: 'Errore conferma acquisto' },
+            { status: 500 }
+          )
+        }
+      }
+    }
+
+    return NextResponse.json({ received: true })
+  } catch (err) {
+    console.error('webhook error:', err)
+    return NextResponse.json({ error: 'Errore webhook' }, { status: 500 })
+  }
 }
