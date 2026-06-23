@@ -1,462 +1,519 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./LandingPage.module.css";
 
-const BETA_REQUEST_URL = "https://earnest-nougat-b08159.netlify.app/";
+const BETA_URL = "https://earnest-nougat-b08159.netlify.app/";
 
-function cls(...keys: (keyof typeof styles)[]) {
-  return keys.map((key) => styles[key]).join(" ");
+function cx(...keys: (keyof typeof styles | false | undefined)[]) {
+  return keys.filter(Boolean).map((k) => styles[k as keyof typeof styles]).join(" ");
 }
 
-function animCounter(el: HTMLElement) {
-  const target = parseInt(el.dataset.target ?? "0", 10);
-  const suffix = el.dataset.suffix ?? "";
-  const duration = 1400;
-  const start = performance.now();
-
-  function update(now: number) {
-    const progress = Math.min((now - start) / duration, 1);
-    const eased = 1 - Math.pow(1 - progress, 3);
-    el.textContent = `${Math.round(eased * target)}${suffix}`;
-    if (progress < 1) requestAnimationFrame(update);
-  }
-
-  requestAnimationFrame(update);
+function revealClass(id: string, revealed: ReadonlySet<string>, ...keys: (keyof typeof styles)[]) {
+  return cx(...keys, revealed.has(id) && "visible");
 }
+
+const STEPS = [
+  {
+    id: "step-1",
+    num: "01",
+    title: "Descrivi il lavoro",
+    desc: "Scrivi in chat, detta a voce o usa il builder. L'AI struttura voci e prezzi dal tuo listino servizi.",
+  },
+  {
+    id: "step-2",
+    num: "02",
+    title: "Invia e fai firmare",
+    desc: "Generi il PDF con il tuo brand e lo mandi via WhatsApp, email o link. Il cliente firma online.",
+  },
+  {
+    id: "step-3",
+    num: "03",
+    title: "Incassa e tieni tutto sotto controllo",
+    desc: "Stripe Connect, rate e abbonamenti. Notifiche immediate su firme, pagamenti e scadenze.",
+  },
+] as const;
+
+const GRID_FEATURES = [
+  {
+    id: "grid-1",
+    title: "Analisi fiscale",
+    desc: "Stima del forfettario: fatturato, contributi, imposte e netto in tempo reale.",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+        <path d="M4 19V5M4 19h16M8 15v-4M12 15V9M16 15V7" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    id: "grid-2",
+    title: "Rate e abbonamenti",
+    desc: "Dividi l'importo in rate o offri piani ricorrenti. Reminder automatici in scadenza.",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+        <rect x="3" y="5" width="18" height="16" rx="2" />
+        <path d="M3 10h18M8 3v4M16 3v4" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    id: "grid-3",
+    title: "Stripe Connect",
+    desc: "Incassa online collegando il tuo account Stripe. Pagamenti sicuri, direttamente a te.",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+        <rect x="2" y="6" width="20" height="14" rx="2" />
+        <path d="M2 10h20M6 15h2M10 15h4" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    id: "grid-4",
+    title: "PDF con il tuo brand",
+    desc: "Logo, colori e template personalizzati. PDF professionale pronto in circa 10 secondi.",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <path d="M14 2v6h6M8 13h8M8 17h5" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    id: "grid-5",
+    title: "Listino servizi",
+    desc: "Catalogo prezzi sempre a portata di mano. L'AI lo usa per preventivi coerenti e veloci.",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+        <rect x="9" y="3" width="6" height="4" rx="1" />
+        <path d="M9 12h6M9 16h4" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    id: "grid-6",
+    title: "Gestione clienti",
+    desc: "Storico preventivi, stato firme e pagamenti per ogni cliente, da mobile o desktop.",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+        <circle cx="9" cy="8" r="3" />
+        <circle cx="17" cy="10" r="2.5" />
+        <path d="M3 20c0-3 2.7-5 6-5s6 2 6 5M14 20c0-2 1.5-3.5 3.5-3.5" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+] as const;
+
+const STATS = [
+  { id: "stat-1", value: "10 sec", label: "per generare un PDF" },
+  { id: "stat-2", value: "0", label: "app aggiuntive" },
+  { id: "stat-3", value: "100%", label: "gratis in beta" },
+] as const;
 
 export function LandingPage() {
-  const pageRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [revealed, setRevealed] = useState<ReadonlySet<string>>(() => new Set());
 
   useEffect(() => {
-    const root = pageRef.current;
+    const root = rootRef.current;
     if (!root) return;
 
-    const revealObserver = new IntersectionObserver(
+    const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add(styles.visible);
-          }
+          if (!entry.isIntersecting) return;
+          const id = (entry.target as HTMLElement).dataset.revealId;
+          if (!id) return;
+          setRevealed((prev) => {
+            if (prev.has(id)) return prev;
+            const next = new Set(prev);
+            next.add(id);
+            return next;
+          });
         });
       },
-      { threshold: 0.15 }
+      { threshold: 0.15, rootMargin: "0px 0px -40px 0px" }
     );
 
-    root.querySelectorAll(`.${styles.reveal}`).forEach((el) => {
-      revealObserver.observe(el);
-    });
+    root.querySelectorAll<HTMLElement>("[data-reveal-id]").forEach((el) => observer.observe(el));
 
-    const statObservers: IntersectionObserver[] = [];
-
-    root.querySelectorAll<HTMLElement>(`[data-target]`).forEach((el) => {
-      const statObserver = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              animCounter(entry.target as HTMLElement);
-              statObserver.unobserve(entry.target);
-            }
-          });
-        },
-        { threshold: 0.5 }
-      );
-      statObserver.observe(el);
-      statObservers.push(statObserver);
-    });
-
-    return () => {
-      revealObserver.disconnect();
-      statObservers.forEach((observer) => observer.disconnect());
-    };
+    return () => observer.disconnect();
   }, []);
 
   return (
-    <div ref={pageRef} className={styles.page}>
-      <nav className={styles.nav}>
+    <div ref={rootRef} className={styles.page}>
+      <header className={styles.navbar}>
         <div className={styles.logo}>
+          <span className={styles.logoMark} aria-hidden>
+            <svg viewBox="0 0 24 24" fill="none">
+              <rect width="24" height="24" rx="6" fill="currentColor" opacity="0.15" />
+              <path
+                d="M7 8h10M7 12h7M7 16h10"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+              />
+            </svg>
+          </span>
           Preventivo<span>AI</span>
         </div>
-        <div className={styles.betaPill}>Beta aperta</div>
-      </nav>
-
-      <section className={styles.hero}>
-        <div className={`${styles.orb} ${styles.orb1}`} />
-        <div className={`${styles.orb} ${styles.orb2}`} />
-        <div className={styles.heroContent}>
-          <div className={styles.eyebrow}>
-            <span className={styles.dot} />
-            Accesso gratuito durante la beta
-          </div>
-          <h1>
-            Dal preventivo
-            <br />
-            alla firma,
-            <br />
-            <em>tutto in un posto</em>
-          </h1>
-          <p>
-            Crei il preventivo con l'AI in pochi minuti, lo invii per la firma online, incassi.
-            Senza saltare tra app diverse.
-          </p>
-          <div className={styles.ctaWrap}>
-            <a
-              className={styles.ctaPrimary}
-              href={BETA_REQUEST_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Richiedi accesso gratuito
-            </a>
-            <div className={styles.ctaNote}>Nessun costo durante la beta · accesso su invito</div>
-          </div>
-        </div>
-        <div className={styles.phoneWrap}>
-          <div className={styles.phone}>
-            <div className={styles.phoneNotch} />
-            <div className={styles.phoneInner}>
-              <div className={styles.miniHeader}>
-                <div className={styles.miniLogo}>
-                  Preventivo<span>AI</span>
-                </div>
-                <div className={styles.miniBell}>
-                  🔔
-                  <div className={styles.badgeDot} />
-                </div>
-              </div>
-              <div className={styles.miniBody}>
-                <div className={styles.miniGreeting}>Ciao Marco 👋</div>
-                <div className={styles.miniSub}>Cosa vuoi fare oggi?</div>
-                <div className={styles.miniBtn}>
-                  <div className={styles.miniPlus}>+</div>
-                  <div className={styles.miniBtnText}>Genera nuovo preventivo</div>
-                </div>
-                <div className={styles.miniStats}>
-                  <div className={styles.miniStat}>
-                    <div className={styles.miniStatN}>12</div>
-                    <div className={styles.miniStatL}>Preventivi</div>
-                  </div>
-                  <div className={styles.miniStat}>
-                    <div className={`${styles.miniStatN} ${styles.miniStatNT}`}>4.2k</div>
-                    <div className={styles.miniStatL}>Incassato</div>
-                  </div>
-                  <div className={styles.miniStat}>
-                    <div className={styles.miniStatN}>276</div>
-                    <div className={styles.miniStatL}>Min.</div>
-                  </div>
-                </div>
-                <div className={styles.miniListHeader}>
-                  <span>Ultimi preventivi</span>
-                  <span className={styles.seeAll}>Vedi tutti</span>
-                </div>
-                <div className={styles.miniRow}>
-                  <div>
-                    <div className={styles.miniName}>Luca Bianchi</div>
-                    <div className={styles.miniDate}>oggi</div>
-                  </div>
-                  <div className={styles.miniRowRight}>
-                    <div className={styles.miniAmount}>850</div>
-                    <div className={styles.miniStatoOk}>firmato</div>
-                  </div>
-                </div>
-                <div className={styles.miniRow}>
-                  <div>
-                    <div className={styles.miniName}>Sara Greco</div>
-                    <div className={styles.miniDate}>ieri</div>
-                  </div>
-                  <div className={styles.miniRowRight}>
-                    <div className={styles.miniAmount}>1.200</div>
-                    <div className={styles.miniStatoWait}>in attesa</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className={styles.steps}>
-        <div className={cls("reveal", "stepTtl")}>Come funziona</div>
-        <div className={cls("reveal", "d1", "stepSub")}>Tre passi dal preventivo all'incasso</div>
-        <div className={styles.stepsList}>
-          <div className={cls("reveal", "d1", "step")}>
-            <div className={styles.stepN}>1</div>
-            <div className={styles.stepC}>
-              <h3>Crei il preventivo in chat o con il builder</h3>
-              <p>
-                Scrivi in chat, detta a voce, o usa il builder manuale. L'AI struttura voci,
-                prezzi e PDF in pochi minuti.
-              </p>
-            </div>
-          </div>
-          <div className={cls("reveal", "d2", "step")}>
-            <div className={styles.stepN}>2</div>
-            <div className={styles.stepC}>
-              <h3>Il cliente firma (e paga) online</h3>
-              <p>
-                Invii un link. Il cliente apre, legge, firma digitalmente. Se hai Stripe collegato,
-                paga direttamente dalla stessa pagina.
-              </p>
-            </div>
-          </div>
-          <div className={cls("reveal", "d3", "step")}>
-            <div className={styles.stepN}>3</div>
-            <div className={styles.stepC}>
-              <h3>Ricevi la notifica e tieni traccia</h3>
-              <p>
-                Notifica immediata quando firma o paga. Reminder automatici se non risponde. Storico
-                completo per ogni cliente.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className={styles.features}>
-        <div className={styles.featInner}>
-          <div className={cls("reveal", "featTtl")}>Ogni funzione, in azione</div>
-          <div className={cls("reveal", "d1", "featSub")}>
-            Vedi come funziona prima ancora di provarla
-          </div>
-
-          <div className={cls("reveal", "featBlock")}>
-            <div className={styles.featText}>
-              <div className={styles.featTag}>Firma digitale</div>
-              <h3 className={styles.featTitleSpaced}>
-                Il cliente firma dal link, tu ricevi la conferma
-              </h3>
-              <p>
-                Invii un link WhatsApp. Il cliente apre il preventivo, legge ogni voce e firma
-                digitalmente. Se hai Stripe collegato, paga nella stessa pagina. Tu ricevi una
-                notifica immediata.
-              </p>
-            </div>
-            <div className={styles.mockupWrap}>
-              <div className={styles.firmaDoc}>
-                <div className={styles.firmaDocHeader}>
-                  <div className={styles.firmaLogoMini}>
-                    Preventivo<span>AI</span>
-                  </div>
-                  <div className={styles.firmaDocId}>PRV-2026-0180</div>
-                </div>
-                <div className={styles.firmaTitle}>Preventivo — Mario Rossi</div>
-                <div className={styles.firmaRow}>
-                  <span>Intervento idraulico</span>
-                  <span>180</span>
-                </div>
-                <div className={styles.firmaRow}>
-                  <span>Sostituzione tubazioni</span>
-                  <span>200</span>
-                </div>
-                <div className={styles.firmaRow}>
-                  <span>Materiali e raccordi</span>
-                  <span>84</span>
-                </div>
-                <div className={styles.firmaTotale}>
-                  <span>TOTALE</span>
-                  <span className={styles.firmaTotaleAmount}>464</span>
-                </div>
-                <div className={styles.firmaBox}>
-                  <div className={styles.firmaLabel}>Firma qui per accettare</div>
-                  <svg className={styles.firmaSvg} viewBox="0 0 160 30">
-                    <path
-                      d="M10,20 Q30,5 50,18 Q70,30 90,12 Q110,0 130,15 Q145,22 150,18"
-                      fill="none"
-                      stroke="#0E9F8E"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeDasharray="200"
-                      className={styles.firmaCursor}
-                    />
-                  </svg>
-                  <div className={styles.firmaCheck}>✓</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className={cls("reveal", "featBlock", "featBlockReverse")}>
-            <div className={styles.featText}>
-              <div className={styles.featTag}>Notifiche e reminder</div>
-              <h3 className={styles.featTitleSpaced}>
-                Sai sempre cosa succede, senza controllare
-              </h3>
-              <p>
-                L'app ti avvisa in tempo reale quando il cliente firma, paga o quando una rata
-                è in scadenza. Toast immediati e reminder automatici — puoi mandare un WhatsApp con
-                un tap.
-              </p>
-            </div>
-            <div className={styles.mockupWrap}>
-              <div className={styles.notifScreen}>
-                <div className={styles.notifHeader2}>
-                  <div className={styles.notifTitle}>Notifiche</div>
-                  <div className={styles.notifBadge2}>3</div>
-                </div>
-                <div className={styles.notifItem}>
-                  <div className={styles.notifItemTitle}>Luca Bianchi ha firmato</div>
-                  <div className={styles.notifItemBody}>Preventivo PRV-2026-0180 · 850</div>
-                  <div className={styles.notifItemTime}>adesso</div>
-                </div>
-                <div className={styles.notifItem}>
-                  <div className={styles.notifItemTitle}>Pagamento ricevuto</div>
-                  <div className={styles.notifItemBody}>Sara Greco · 1.200 via Stripe</div>
-                  <div className={styles.notifItemTime}>2 min fa</div>
-                </div>
-                <div className={styles.notifItem}>
-                  <div className={styles.notifItemTitle}>Rata in scadenza</div>
-                  <div className={styles.notifItemBody}>Marco Verdi · 300 · 25 giu</div>
-                  <div className={styles.notifItemTime}>oggi</div>
-                </div>
-                <div className={styles.toastNotif}>
-                  <div className={styles.toastIcon}>✓</div>
-                  <div className={styles.toastText}>Nuovo preventivo firmato — Luca Bianchi</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className={cls("reveal", "featBlock")}>
-            <div className={styles.featText}>
-              <div className={styles.featTag}>AI in chat o voce</div>
-              <h3 className={styles.featTitleSpaced}>
-                Scrivi come a un collega, il preventivo si crea da solo
-              </h3>
-              <p>
-                Descrivi il lavoro in chat o registra un vocale. L'AI struttura voci, prezzi e
-                testo professionale in pochi secondi. Puoi modificare tutto prima di generare il PDF.
-              </p>
-            </div>
-            <div className={styles.mockupWrap}>
-              <div className={styles.chatScreen}>
-                <div className={`${styles.chatMsg} ${styles.chatUser}`}>
-                  Devo fare un preventivo per un impianto idraulico, sostituzione tubazioni bagno,
-                  budget cliente 600
-                </div>
-                <div className={`${styles.chatMsg} ${styles.chatAi}`}>
-                  Ho creato il preventivo! Ecco le voci:
-                </div>
-                <div className={styles.chatTyping}>
-                  <div className={styles.typingDot} />
-                  <div className={styles.typingDot} />
-                  <div className={styles.typingDot} />
-                </div>
-                <div className={`${styles.chatMsg} ${styles.chatAi}`}>
-                  Intervento idraulico (2h) · 180 — Sostituzione valvola · 90 — Materiali · 45 —
-                  Totale: 315
-                </div>
-                <div className={styles.chatInput}>
-                  <div className={styles.chatInputText}>Aggiungi una voce...</div>
-                  <div className={styles.chatSend}>→</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className={cls("reveal", "featBlock", "featBlockReverse")}>
-            <div className={styles.featText}>
-              <div className={styles.featTag}>PDF professionali</div>
-              <h3 className={styles.featTitleSpaced}>
-                Template con il tuo brand, pronti in 10 secondi
-              </h3>
-              <p>
-                Scegli tra più template, aggiungi il tuo logo e colori. Il PDF viene generato
-                istantaneamente con anteprima paginata. Condivisione con un tap — via WhatsApp,
-                email o link.
-              </p>
-            </div>
-            <div className={styles.mockupWrap}>
-              <div className={styles.pdfScreen}>
-                <div className={styles.pdfHeader2}>
-                  <div className={styles.pdfAzienda}>Mario Rossi</div>
-                  <div className={styles.pdfSub2}>Idraulico</div>
-                </div>
-                <div className={styles.pdfSection}>
-                  <div className={styles.pdfSectionTitle}>Servizi</div>
-                  <div className={styles.pdfLine} />
-                  <div className={styles.pdfLine} />
-                  <div className={styles.pdfLine} />
-                  <div className={styles.pdfLine} />
-                </div>
-                <div className={styles.pdfTotalBox}>
-                  <div className={styles.pdfTotalLabel}>TOTALE</div>
-                  <div className={styles.pdfTotalAmount}>315</div>
-                </div>
-                <div className={styles.pdfActions}>
-                  <div className={styles.pdfBtn}>Condividi</div>
-                  <div className={styles.pdfBtn2}>Anteprima</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className={styles.proof}>
-        <div className={styles.proofInner}>
-          <div className={cls("reveal", "proofStats")}>
-            <div>
-              <span className={styles.statN} data-target="10" data-suffix="sec">
-                0sec
-              </span>
-              <div className={styles.statL}>per generare un PDF</div>
-            </div>
-            <div>
-              <span className={styles.statN} data-target="0">
-                0
-              </span>
-              <div className={styles.statL}>app aggiuntive</div>
-            </div>
-            <div>
-              <span className={styles.statN} data-target="100" data-suffix="%">
-                0%
-              </span>
-              <div className={styles.statL}>gratis in beta</div>
-            </div>
-          </div>
-          <h2 className={cls("reveal", "d1")}>
-            Fatto per artigiani e professionisti italiani
-          </h2>
-          <p className={cls("reveal", "d2")}>
-            Idraulici, elettricisti, fotografi, videomaker, consulenti. Se lavori con i clienti e
-            hai bisogno di preventivi veloci, PreventivoAI è per te.
-          </p>
-        </div>
-      </section>
-
-      <section className={styles.ctaBottom}>
-        <h2 className={cls("reveal")}>Vuoi provarla durante la beta?</h2>
-        <p className={cls("reveal", "d1")}>
-          Sto aprendo l'accesso a un gruppo ristretto. In cambio ho bisogno del tuo feedback
-          sincero su cosa funziona e cosa migliorare.
-        </p>
-        <a
-          className={cls("reveal", "d2", "ctaDark")}
-          href={BETA_REQUEST_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Richiedi accesso gratuito
+        <a className={styles.navCta} href={BETA_URL} target="_blank" rel="noopener noreferrer">
+          Accesso beta
         </a>
-        <p className={cls("reveal", "d3", "ctaNote2")}>
-          Nessun costo durante la beta · accesso su invito
-        </p>
+      </header>
+
+      <main className={styles.main}>
+      <section className={styles.hero}>
+        <div className={styles.heroBg} aria-hidden>
+          <div className={styles.heroGrid} />
+          <div className={cx("glow", "glowA")} />
+          <div className={cx("glow", "glowB")} />
+        </div>
+
+        <div className={styles.heroContent}>
+          <div className={styles.heroText}>
+            <div className={styles.betaBadge}>
+              <span className={styles.liveDot} />
+              Beta aperta — accesso gratuito
+            </div>
+            <h1 className={styles.heroTitle}>
+              Preventivi, firme e pagamenti{" "}
+              <span className={styles.heroHighlight}>senza uscire dall&apos;app</span>
+            </h1>
+            <p className={styles.heroLead}>
+              PreventivoAI è il SaaS italiano per artigiani: crei il preventivo con l&apos;AI,
+              lo fai firmare online e incassi con Stripe. Tutto da telefono, tablet o browser.
+            </p>
+            <div className={styles.heroActions}>
+              <a className={styles.btnPrimary} href={BETA_URL} target="_blank" rel="noopener noreferrer">
+                Richiedi accesso gratuito
+                <svg viewBox="0 0 20 20" fill="none" aria-hidden>
+                  <path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </a>
+              <p className={styles.heroFinePrint}>Nessun costo in beta · accesso su invito</p>
+            </div>
+          </div>
+
+          <div className={styles.heroMock} aria-hidden>
+            <div className={styles.mockWindow}>
+              <div className={styles.mockBar}>
+                <span /><span /><span />
+              </div>
+              <div className={styles.mockBody}>
+                <div className={styles.mockPipeline}>
+                  <div className={cx("pipeStep", "pipeStepActive")}>
+                    <span className={styles.pipeIcon}>1</span>
+                    <div>
+                      <strong>Preventivo</strong>
+                      <em>PRV-2026-0184</em>
+                    </div>
+                  </div>
+                  <div className={styles.pipeLine} />
+                  <div className={cx("pipeStep", "pipeStepActive")}>
+                    <span className={styles.pipeIcon}>2</span>
+                    <div>
+                      <strong>Firmato</strong>
+                      <em>Luca Bianchi</em>
+                    </div>
+                  </div>
+                  <div className={styles.pipeLine} />
+                  <div className={cx("pipeStep", "pipeStepPending")}>
+                    <span className={styles.pipeIcon}>3</span>
+                    <div>
+                      <strong>Incassato</strong>
+                      <em>€850 via Stripe</em>
+                    </div>
+                  </div>
+                </div>
+                <div className={styles.mockCards}>
+                  <div className={cx("mockToast", "mockToast1")}>
+                    <span className={styles.toastIcon}>✓</span>
+                    Preventivo firmato · ora
+                  </div>
+                  <div className={cx("mockToast", "mockToast2")}>
+                    <span className={styles.toastIconPay}>€</span>
+                    Pagamento ricevuto · €850
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.section} id="come-funziona">
+        <div className={styles.container}>
+          <header className={styles.sectionHeader}>
+            <span
+              data-reveal-id="steps-eyebrow"
+              className={revealClass("steps-eyebrow", revealed, "eyebrow", "reveal")}
+            >
+              Come funziona
+            </span>
+            <h2
+              data-reveal-id="steps-title"
+              className={revealClass("steps-title", revealed, "reveal", "delay1")}
+            >
+              Dal cantiere all&apos;incasso in tre passi
+            </h2>
+            <p
+              data-reveal-id="steps-sub"
+              className={revealClass("steps-sub", revealed, "reveal", "delay2", "sectionLead")}
+            >
+              Niente più Word, PDF sparsi e messaggi persi su WhatsApp.
+            </p>
+          </header>
+
+          <div className={styles.stepsRow}>
+            {STEPS.map((step, i) => (
+              <article
+                key={step.id}
+                data-reveal-id={step.id}
+                className={revealClass(
+                  step.id,
+                  revealed,
+                  "reveal",
+                  i === 0 ? "delay1" : i === 1 ? "delay2" : "delay3",
+                  "stepCard"
+                )}
+              >
+                <span className={styles.stepNum}>{step.num}</span>
+                <h3>{step.title}</h3>
+                <p>{step.desc}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className={cx("section", "sectionAlt")}>
+        <div className={styles.container}>
+          <div className={styles.split}>
+            <div
+              data-reveal-id="ai-copy"
+              className={revealClass("ai-copy", revealed, "reveal", "splitCopy")}
+            >
+              <span className={styles.eyebrow}>Preventivi con AI</span>
+              <h2>Parla del lavoro, il preventivo si scrive da solo</h2>
+              <p>
+                Descrivi l&apos;intervento come faresti con un collega: l&apos;AI capisce il
+                contesto, attinge al tuo listino servizi e propone voci e prezzi coerenti.
+                Modifichi tutto prima di inviare.
+              </p>
+              <ul className={styles.featureList}>
+                <li>Chat testuale e dettatura vocale</li>
+                <li>Builder manuale per il controllo totale</li>
+                <li>PDF professionale generato in pochi secondi</li>
+              </ul>
+            </div>
+
+            <div
+              data-reveal-id="ai-visual"
+              className={revealClass("ai-visual", revealed, "reveal", "delay2", "chatPanel")}
+            >
+              <div className={styles.chatHeader}>
+                <span className={styles.chatDot} />
+                Assistente PreventivoAI
+              </div>
+              <div className={cx("chatMsg", "chatUser")}>
+                Preventivo per rifacimento bagno: demolizione, nuove tubazioni, sanitari. Budget
+                cliente circa €3.500.
+              </div>
+              <div className={cx("chatMsg", "chatAi")}>
+                <strong>Preventivo creato</strong>
+                <ul>
+                  <li>Demolizione e smaltimento · €420</li>
+                  <li>Impianto idraulico · €1.180</li>
+                  <li>Sanitari e rubinetteria · €890</li>
+                  <li>Manodopera posa · €760</li>
+                </ul>
+                <span className={styles.chatTotal}>Totale: €3.250</span>
+              </div>
+              <div className={styles.chatTyping}>
+                <span /><span /><span />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.section}>
+        <div className={styles.container}>
+          <div className={cx("split", "splitReverse")}>
+            <div
+              data-reveal-id="sign-visual"
+              className={revealClass("sign-visual", revealed, "reveal", "delay1", "signPanel")}
+            >
+              <div className={styles.signPhone}>
+                <div className={styles.signScreen}>
+                  <div className={styles.signBrand}>
+                    Preventivo<span>AI</span>
+                    <em>PRV-2026-0184</em>
+                  </div>
+                  <h4>Rifacimento bagno — Mario Rossi</h4>
+                  <div className={styles.signRows}>
+                    <div><span>Demolizione</span><span>€420</span></div>
+                    <div><span>Impianto idraulico</span><span>€1.180</span></div>
+                    <div><span>Sanitari</span><span>€890</span></div>
+                  </div>
+                  <div className={styles.signGrandTotal}>
+                    <span>Totale</span>
+                    <span>€3.250</span>
+                  </div>
+                  <div className={styles.signArea}>
+                    <p>Firma qui per accettare</p>
+                    <svg viewBox="0 0 180 36" className={styles.signStroke} aria-hidden>
+                      <path
+                        d="M8,24 Q28,8 52,20 Q76,32 98,14 Q120,0 142,18 Q158,26 172,20"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        pathLength="200"
+                      />
+                    </svg>
+                    <div className={styles.signDone}>✓ Firmato</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div
+              data-reveal-id="sign-copy"
+              className={revealClass("sign-copy", revealed, "reveal", "splitCopy")}
+            >
+              <span className={styles.eyebrow}>Firma digitale</span>
+              <h2>Il cliente firma dal link, tu ricevi la conferma</h2>
+              <p>
+                Invii un link sicuro via WhatsApp, email o copia-incolla. Il cliente legge ogni
+                voce, firma con il dito o il mouse e scarica il PDF firmato. Tu ricevi una
+                notifica immediata in app.
+              </p>
+              <ul className={styles.featureList}>
+                <li>Firma canvas con prova e audit trail</li>
+                <li>Reminder automatici se non risponde</li>
+                <li>Pagamento Stripe sulla stessa pagina</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className={cx("section", "sectionMuted")}>
+        <div className={styles.container}>
+          <header className={styles.sectionHeader}>
+            <span
+              data-reveal-id="grid-eyebrow"
+              className={revealClass("grid-eyebrow", revealed, "eyebrow", "reveal")}
+            >
+              Funzionalità
+            </span>
+            <h2
+              data-reveal-id="grid-title"
+              className={revealClass("grid-title", revealed, "reveal", "delay1")}
+            >
+              Tutto quello che ti serve sul campo
+            </h2>
+            <p
+              data-reveal-id="grid-sub"
+              className={revealClass("grid-sub", revealed, "reveal", "delay2", "sectionLead")}
+            >
+              Pensato per idraulici, elettricisti, videomaker, consulenti e chiunque lavori con i clienti.
+            </p>
+          </header>
+
+          <div className={styles.featureGrid}>
+            {GRID_FEATURES.map((item, i) => (
+              <article
+                key={item.id}
+                data-reveal-id={item.id}
+                className={revealClass(
+                  item.id,
+                  revealed,
+                  "reveal",
+                  i % 3 === 0 ? "delay1" : i % 3 === 1 ? "delay2" : "delay3",
+                  "gridCard"
+                )}
+              >
+                <div className={styles.gridIconWrap}>{item.icon}</div>
+                <h3>{item.title}</h3>
+                <p>{item.desc}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.statsSection}>
+        <div className={styles.container}>
+          <div
+            data-reveal-id="stats-row"
+            className={revealClass("stats-row", revealed, "reveal", "statsGrid")}
+          >
+            {STATS.map((stat, i) => (
+              <div
+                key={stat.id}
+                className={cx(
+                  "statItem",
+                  i === 1 ? "delay1" : i === 2 ? "delay2" : undefined
+                )}
+              >
+                <span className={styles.statNumber}>{stat.value}</span>
+                <span className={styles.statDesc}>{stat.label}</span>
+              </div>
+            ))}
+          </div>
+          <h2
+            data-reveal-id="stats-title"
+            className={revealClass("stats-title", revealed, "reveal", "delay1", "statsHeading")}
+          >
+            Fatto per artigiani italiani
+          </h2>
+          <p
+            data-reveal-id="stats-text"
+            className={revealClass("stats-text", revealed, "reveal", "delay2", "statsCopy")}
+          >
+            Un unico strumento al posto di Word, email, firme cartacee e bonifici da rincorrere.
+            Mobile, desktop e web sempre sincronizzati.
+          </p>
+        </div>
+      </section>
+
+      <section className={styles.ctaSection}>
+        <div
+          data-reveal-id="cta-box"
+          className={revealClass("cta-box", revealed, "reveal", "ctaCard")}
+        >
+          <h2>Vuoi provarla durante la beta?</h2>
+          <p>
+            Sto aprendo l&apos;accesso a un gruppo ristretto di artigiani. In cambio mi serve il
+            tuo feedback sincero su cosa funziona e cosa migliorare.
+          </p>
+          <a className={styles.btnPrimary} href={BETA_URL} target="_blank" rel="noopener noreferrer">
+            Richiedi accesso gratuito
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden>
+              <path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </a>
+          <p className={styles.ctaNote}>Nessun costo durante la beta · accesso su invito</p>
+        </div>
       </section>
 
       <footer className={styles.footer}>
-        <div className={styles.logo2}>
-          Preventivo<span>AI</span>
+        <div className={styles.footerInner}>
+          <div className={styles.footerLogo}>
+            Preventivo<span>AI</span>
+          </div>
+          <nav className={styles.footerNav} aria-label="Link legali">
+            <Link href="/termini">Termini</Link>
+            <Link href="/privacy">Privacy</Link>
+          </nav>
+          <p className={styles.footerCopy}>© {new Date().getFullYear()} PreventivoAI</p>
         </div>
-        <nav className={styles.footerNav}>
-          <Link href="/termini" className={styles.footerLink}>
-            Termini
-          </Link>
-          <Link href="/privacy" className={styles.footerLink}>
-            Privacy
-          </Link>
-        </nav>
       </footer>
+      </main>
     </div>
   );
 }
