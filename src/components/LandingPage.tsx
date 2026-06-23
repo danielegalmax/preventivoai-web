@@ -4,8 +4,6 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import styles from "./LandingPage.module.css";
 
-const BETA_URL = "https://earnest-nougat-b08159.netlify.app/";
-
 function cx(...keys: (keyof typeof styles | false | undefined)[]) {
   return keys.filter(Boolean).map((k) => styles[k as keyof typeof styles]).join(" ");
 }
@@ -147,9 +145,9 @@ export function LandingPage() {
         <div className={styles.logo}>
           Preventivo<span>AI</span>
         </div>
-        <a className={styles.navCta} href={BETA_URL} target="_blank" rel="noopener noreferrer">
-          Accesso beta
-        </a>
+        <Link className={styles.navCta} href="/login">
+          Login
+        </Link>
       </header>
 
       <main className={styles.main}>
@@ -175,12 +173,12 @@ export function LandingPage() {
               lo fai firmare online e incassi con Stripe. Tutto da telefono, tablet o browser.
             </p>
             <div className={styles.heroActions}>
-              <a className={styles.btnPrimary} href={BETA_URL} target="_blank" rel="noopener noreferrer">
-                Richiedi accesso gratuito
+              <Link className={styles.btnPrimary} href="/login">
+                Accedi
                 <svg viewBox="0 0 20 20" fill="none" aria-hidden>
                   <path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-              </a>
+              </Link>
               <p className={styles.heroFinePrint}>Nessun costo in beta · accesso su invito</p>
             </div>
           </div>
@@ -475,17 +473,17 @@ export function LandingPage() {
           data-reveal-id="cta-box"
           className={revealClass("cta-box", revealed, "reveal", "ctaCard")}
         >
-          <h2>Vuoi provarla durante la beta?</h2>
+          <h2>Pronto a usarla?</h2>
           <p>
-            Sto aprendo l&apos;accesso a un gruppo ristretto di artigiani. In cambio mi serve il
-            tuo feedback sincero su cosa funziona e cosa migliorare.
+            Accedi con le tue credenziali e gestisci preventivi, firme e pagamenti
+            da browser, tablet o telefono.
           </p>
-          <a className={styles.btnPrimary} href={BETA_URL} target="_blank" rel="noopener noreferrer">
-            Richiedi accesso gratuito
+          <Link className={styles.btnPrimary} href="/login">
+            Accedi
             <svg viewBox="0 0 20 20" fill="none" aria-hidden>
               <path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-          </a>
+          </Link>
           <p className={styles.ctaNote}>Nessun costo durante la beta · accesso su invito</p>
         </div>
       </section>

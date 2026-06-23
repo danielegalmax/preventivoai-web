@@ -1,7 +1,6 @@
 'use client'
 
 import { Suspense, useState } from 'react'
-import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { getPostLoginPath } from '@/lib/postLogin'
@@ -149,15 +148,6 @@ function LoginContent() {
           </button>
 
         </form>
-
-        {!BETA_REGISTRAZIONE_APERTA ? (
-          <p className="text-center text-sm text-gray-500 mt-4">
-            Accesso su invito —{' '}
-            <Link href="/" className="text-[#0E9F8E] font-semibold hover:underline underline-offset-2">
-              richiedi l&apos;accesso
-            </Link>
-          </p>
-        ) : null}
 
         {mode === 'login' && (
           <p className="text-center text-xs text-gray-400 mt-4">
