@@ -35,7 +35,11 @@ export default function LoginPage() {
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) setError('Email o password non corretti.')
-      else window.location.href = '/dashboard'
+      else {
+        const params = new URLSearchParams(window.location.search)
+        const next = params.get('next') ?? '/dashboard'
+        window.location.href = next
+      }
     }
 
     setLoading(false)
