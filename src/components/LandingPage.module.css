@@ -66,29 +66,15 @@
 }
 
 .logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.4px;
   color: #fff;
-  text-decoration: none;
 }
 
 .logo span,
 .footerLogo span {
   color: var(--teal-light);
-}
-
-.logoMark {
-  display: flex;
-  color: var(--teal-light);
-}
-
-.logoMark svg {
-  width: 28px;
-  height: 28px;
 }
 
 .navCta {
@@ -1116,34 +1102,83 @@
   }
 
   .heroContent {
-    padding: 32px 16px 48px;
+    padding: 32px 16px 40px;
+    gap: 28px;
   }
 
   .heroTitle {
     letter-spacing: -0.8px;
   }
 
+  /* Hero mock — mobile only: full width, pipeline orizzontale compatta */
+  .heroMock {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+  }
+
+  .mockBar {
+    display: none;
+  }
+
+  .mockWindow {
+    border-radius: 14px;
+  }
+
+  .mockBody {
+    padding: 14px 12px;
+  }
+
   .mockPipeline {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .pipeStep {
+    flex: 1;
     flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
+    align-items: center;
+    text-align: center;
+    gap: 5px;
+    min-width: 0;
+  }
+
+  .pipeStep em {
+    display: none;
+  }
+
+  .pipeStep strong {
+    font-size: 10px;
+    line-height: 1.2;
+  }
+
+  .pipeIcon {
+    width: 30px;
+    height: 30px;
+    font-size: 12px;
   }
 
   .pipeLine {
-    width: 2px;
-    height: 16px;
-    margin: 0 auto;
+    width: 10px;
+    height: 2px;
+    min-width: unset;
+    margin: 15px 0 0;
+    align-self: flex-start;
+    flex-shrink: 0;
   }
 
   .pipeLine::after {
-    transform: scaleY(0);
-    transform-origin: top;
-    animation-name: pipeFillV;
+    transform: scaleX(0);
+    transform-origin: left;
+    animation-name: pipeFill;
   }
 
-  @keyframes pipeFillV {
-    0% { transform: scaleY(0); }
-    40%, 100% { transform: scaleY(1); }
+  .mockToast {
+    font-size: 12px;
+    padding: 10px 12px;
   }
 
   .featureGrid {

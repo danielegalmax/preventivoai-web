@@ -145,17 +145,6 @@ export function LandingPage() {
     <div ref={rootRef} className={styles.page}>
       <header className={styles.navbar}>
         <div className={styles.logo}>
-          <span className={styles.logoMark} aria-hidden>
-            <svg viewBox="0 0 24 24" fill="none">
-              <rect width="24" height="24" rx="6" fill="currentColor" opacity="0.15" />
-              <path
-                d="M7 8h10M7 12h7M7 16h10"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                strokeLinecap="round"
-              />
-            </svg>
-          </span>
           Preventivo<span>AI</span>
         </div>
         <a className={styles.navCta} href={BETA_URL} target="_blank" rel="noopener noreferrer">
