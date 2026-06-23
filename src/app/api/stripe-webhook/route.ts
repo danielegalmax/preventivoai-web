@@ -83,15 +83,16 @@ async function inviaEmailDownload(
   }
 
   const resend = new Resend(process.env.RESEND_API_KEY)
-  const { error } = await resend.emails.send({
+  const { data, error } = await resend.emails.send({
     from: 'PreventivoAI <onboarding@resend.dev>',
     to: emailCliente,
     subject: `Il tuo acquisto è pronto — ${titolo}`,
     html: buildDownloadEmailHtml(titolo, linkDownload),
   })
+  console.log('Resend result:', JSON.stringify(data))
+  console.log('Resend error:', JSON.stringify(error))
 
   if (error) {
-    console.error('Resend error:', error)
     throw new Error(error.message)
   }
 }
