@@ -28,6 +28,7 @@ const PREVENTIVI_SELECT = `
 
 export default function Dashboard() {
   const [nomeAzienda, setNomeAzienda] = useState('')
+  const [isAdmin, setIsAdmin] = useState(false)
   const [totalePreventivi, setTotalePreventivi] = useState(0)
   const [incassatoTotale, setIncassatoTotale] = useState(0)
   const [totaleVendite, setTotaleVendite] = useState(0)
@@ -49,10 +50,11 @@ export default function Dashboard() {
 
     const { data: prof } = await supabase
       .from('profiles')
-      .select('nome_azienda')
+      .select('nome_azienda, is_admin')
       .eq('id', user.id)
       .single()
     if (prof?.nome_azienda) setNomeAzienda(prof.nome_azienda)
+    if (prof?.is_admin) setIsAdmin(true)
 
     const { count: countPreventivi } = await supabase
       .from('preventivi')
@@ -104,6 +106,17 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout nomeAzienda={nomeDisplay} activeRoute="/dashboard">
+      {isAdmin && (
+        <div className="flex justify-end -mt-2 mb-4">
+          <Link
+            href="/dashboard/admin"
+            className="text-xs font-medium text-[#0D1B2A] border border-[#0D1B2A]/30 rounded-lg px-3 py-1.5 hover:bg-[#0D1B2A]/5 transition-colors"
+          >
+            📊 Analytics
+          </Link>
+        </div>
+      )}
+
       <div className="mb-8">
         <p className="text-xs font-medium text-gray-400 tracking-wide">
           {dataItalianaMaiuscola()}
