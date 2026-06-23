@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { Resend } from 'resend'
 
-function normalizeDownloadUrl(link: string): string {
-  return link.startsWith('http') ? link : `https://${link}`
+function normalizeDownloadUrl(link: string): string {  return link.startsWith('http') ? link : `https://${link}`
 }
 
 async function confermaAcquisto(
@@ -73,8 +71,7 @@ function buildDownloadEmailHtml(titolo: string, linkDownload: string): string {
 }
 
 async function inviaEmailDownload(
-  resend: Resend,
-  emailCliente: string,
+  resend: { emails: { send: (options: unknown) => Promise<{ data: unknown; error: { message: string } | null }> } },  emailCliente: string,
   titolo: string,
   linkDownload: string
 ): Promise<void> {
@@ -110,8 +107,8 @@ export async function POST(req: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
+    const { Resend } = await import('resend')
     const resend = new Resend(process.env.RESEND_API_KEY!)
-
     const body = await req.text()
     let event: Stripe.Event
 
