@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
 interface StatoGenerale {
@@ -38,6 +38,50 @@ interface UtenteAttivo {
   costo_euro: number
 }
 
+interface FeatureAdoption {
+  evento: string
+  utenti_unici: number
+  pct: number
+}
+
+interface VenditaProdottoRiga {
+  prodotto_id: string
+  titolo: string
+  creator: string
+  vendite: number
+  incassato: number
+}
+
+interface VenditeSommario {
+  totale_vendite: number
+  totale_incassato: number
+  commissioni: number
+}
+
+interface DettaglioUtente {
+  schermate: { nome: string; count: number }[]
+  feature: { nome: string; count: number }[]
+  preventivi_count: number
+  preventivi_importo: number
+  prodotti_creati: number
+  vendite_count: number
+  vendite_incassato: number
+  timeline: { evento: string; schermata: string | null; created_at: string }[]
+}
+
+type ProdottoDigitaleJoin = {
+  titolo: string
+  prezzo: number
+  user_id: string
+}
+
+function parseProdottoJoin(raw: unknown): ProdottoDigitaleJoin | null {
+  if (!raw || typeof raw !== 'object') return null
+  const p = raw as ProdottoDigitaleJoin
+  if (typeof p.titolo !== 'string' || typeof p.user_id !== 'string') return null
+  return p
+}
+
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [accesso, setAccesso] = useState(false)
@@ -45,10 +89,22 @@ export default function AdminDashboard() {
   const [eventiFrequenti, setEventiFrequenti] = useState<EventoFrequente[]>([])
   const [usaggioEndpoint, setUsaggioEndpoint] = useState<UsaggioEndpoint[]>([])
   const [utentiAttivi, setUtentiAttivi] = useState<UtenteAttivo[]>([])
+  const [featureAdoption, setFeatureAdoption] = useState<FeatureAdoption[]>([])
+  const [venditeSommario, setVenditeSommario] = useState<VenditeSommario | null>(null)
+  const [venditeProdotti, setVenditeProdotti] = useState<VenditaProdottoRiga[]>([])
+  const [utenteEspanso, setUtenteEspanso] = useState<string | null>(null)
+  const [dettaglioUtente, setDettaglioUtente] = useState<DettaglioUtente | null>(null)
+  const [dettaglioLoading, setDettaglioLoading] = useState(false)
   const [periodoGiorni, setPeriodoGiorni] = useState(7)
 
   useEffect(() => { checkAdmin() }, [])
-  useEffect(() => { if (accesso) caricaDati() }, [accesso, periodoGiorni])
+  useEffect(() => {
+    if (accesso) {
+      setUtenteEspanso(null)
+      setDettaglioUtente(null)
+      void caricaDati()
+    }
+  }, [accesso, periodoGiorni])
 
   async function checkAdmin() {
     const { data: { user } } = await supabase.auth.getUser()
@@ -59,10 +115,98 @@ export default function AdminDashboard() {
     setLoading(false)
   }
 
-  async function caricaDati() {
+  function getDataInizioStr() {
     const dataInizio = new Date()
     dataInizio.setDate(dataInizio.getDate() - periodoGiorni)
-    const dataInizioStr = dataInizio.toISOString()
+    return dataInizio.toISOString()
+  }
+
+  async function caricaDettaglioUtente(userId: string) {
+    setDettaglioLoading(true)
+    const inizio = getDataInizioStr()
+
+    const [
+      { data: eventi },
+      { data: preventivi },
+      { count: prodottiCount },
+      { data: venditeUtente },
+    ] = await Promise.all([
+      supabase
+        .from('eventi')
+        .select('evento, schermata, created_at')
+        .eq('user_id', userId)
+        .gte('created_at', inizio)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('preventivi')
+        .select('importo_totale')
+        .eq('user_id', userId)
+        .gte('created_at', inizio),
+      supabase
+        .from('prodotti_digitali')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId),
+      supabase
+        .from('acquisti_prodotti')
+        .select('prodotto_id, prodotti_digitali!inner(prezzo, user_id)')
+        .eq('pagato', true)
+        .eq('prodotti_digitali.user_id', userId)
+        .gte('created_at', inizio),
+    ])
+
+    const schermateMap: Record<string, number> = {}
+    const featureMap: Record<string, number> = {}
+    eventi?.forEach((e) => {
+      if (e.evento === 'schermata_aperta' && e.schermata) {
+        schermateMap[e.schermata] = (schermateMap[e.schermata] || 0) + 1
+      } else if (e.evento !== 'schermata_aperta') {
+        featureMap[e.evento] = (featureMap[e.evento] || 0) + 1
+      }
+    })
+
+    let venditeCount = 0
+    let venditeIncassato = 0
+    venditeUtente?.forEach((v) => {
+      const pd = parseProdottoJoin(v.prodotti_digitali)
+      if (!pd) return
+      venditeCount++
+      venditeIncassato += pd.prezzo || 0
+    })
+
+    setDettaglioUtente({
+      schermate: Object.entries(schermateMap)
+        .map(([nome, count]) => ({ nome, count }))
+        .sort((a, b) => b.count - a.count),
+      feature: Object.entries(featureMap)
+        .map(([nome, count]) => ({ nome, count }))
+        .sort((a, b) => b.count - a.count),
+      preventivi_count: preventivi?.length || 0,
+      preventivi_importo: preventivi?.reduce((a, p) => a + (p.importo_totale || 0), 0) || 0,
+      prodotti_creati: prodottiCount || 0,
+      vendite_count: venditeCount,
+      vendite_incassato: venditeIncassato,
+      timeline: (eventi || []).slice(0, 10).map((e) => ({
+        evento: e.evento,
+        schermata: e.schermata,
+        created_at: e.created_at,
+      })),
+    })
+    setDettaglioLoading(false)
+  }
+
+  function toggleUtente(userId: string) {
+    if (utenteEspanso === userId) {
+      setUtenteEspanso(null)
+      setDettaglioUtente(null)
+      return
+    }
+    setUtenteEspanso(userId)
+    setDettaglioUtente(null)
+    void caricaDettaglioUtente(userId)
+  }
+
+  async function caricaDati() {
+    const dataInizioStr = getDataInizioStr()
 
     // Statistiche generali
     const [
@@ -74,6 +218,8 @@ export default function AdminDashboard() {
       { data: aiUsageOggi },
       { data: eventiRaw },
       { data: sessioniRaw },
+      { data: adoptionRaw },
+      { data: vendite },
     ] = await Promise.all([
       supabase.from('profiles').select('*', { count: 'exact', head: true }),
       supabase.from('sessioni').select('user_id').gte('ultimo_accesso', dataInizioStr),
@@ -83,15 +229,22 @@ export default function AdminDashboard() {
       supabase.from('ai_usage').select('costo_euro').gte('created_at', new Date().toISOString().split('T')[0]),
       supabase.from('eventi').select('evento').gte('created_at', dataInizioStr),
       supabase.from('sessioni').select('user_id, ultimo_accesso, numero_sessioni').order('ultimo_accesso', { ascending: false }).limit(20),
+      supabase.from('eventi').select('evento, user_id').gte('created_at', dataInizioStr),
+      supabase
+        .from('acquisti_prodotti')
+        .select('prodotto_id, prodotti_digitali(titolo, prezzo, user_id), created_at')
+        .eq('pagato', true)
+        .gte('created_at', dataInizioStr),
     ])
 
     const tokenInput = aiUsage?.reduce((a, r) => a + (r.token_input || 0), 0) || 0
     const tokenOutput = aiUsage?.reduce((a, r) => a + (r.token_output || 0), 0) || 0
     const costoTotale = aiUsage?.reduce((a, r) => a + (r.costo_euro || 0), 0) || 0
     const costoOggi = aiUsageOggi?.reduce((a, r) => a + (r.costo_euro || 0), 0) || 0
+    const totaleUtentiNum = totaleUtenti || 0
 
     setStato({
-      totale_utenti: totaleUtenti || 0,
+      totale_utenti: totaleUtentiNum,
       utenti_attivi_7gg: sessioniAttive?.length || 0,
       preventivi_totali: preventiviTotali || 0,
       preventivi_oggi: preventiviOggi?.length || 0,
@@ -106,6 +259,61 @@ export default function AdminDashboard() {
     const conteggioEventi: Record<string, number> = {}
     eventiRaw?.forEach(e => { conteggioEventi[e.evento] = (conteggioEventi[e.evento] || 0) + 1 })
     setEventiFrequenti(Object.entries(conteggioEventi).map(([evento, count]) => ({ evento, count })).sort((a, b) => b.count - a.count).slice(0, 10))
+
+    // Feature adoption
+    const adoption: Record<string, Set<string>> = {}
+    adoptionRaw?.forEach(r => {
+      if (!adoption[r.evento]) adoption[r.evento] = new Set()
+      adoption[r.evento].add(r.user_id)
+    })
+    setFeatureAdoption(
+      Object.entries(adoption)
+        .map(([evento, users]) => ({
+          evento,
+          utenti_unici: users.size,
+          pct: totaleUtentiNum > 0 ? Math.round((users.size / totaleUtentiNum) * 100) : 0,
+        }))
+        .sort((a, b) => b.utenti_unici - a.utenti_unici),
+    )
+
+    // Vendite prodotti digitali
+    const venditePerProdotto: Record<string, { titolo: string; creatorId: string; vendite: number; incassato: number }> = {}
+    let totaleVendite = 0
+    let totaleIncassato = 0
+    vendite?.forEach((v) => {
+      const pd = parseProdottoJoin(v.prodotti_digitali)
+      if (!pd) return
+      totaleVendite++
+      totaleIncassato += pd.prezzo || 0
+      const key = v.prodotto_id as string
+      if (!venditePerProdotto[key]) {
+        venditePerProdotto[key] = { titolo: pd.titolo, creatorId: pd.user_id, vendite: 0, incassato: 0 }
+      }
+      venditePerProdotto[key].vendite++
+      venditePerProdotto[key].incassato += pd.prezzo || 0
+    })
+
+    const creatorIds = [...new Set(Object.values(venditePerProdotto).map((p) => p.creatorId))]
+    const { data: creatorProfiles } = creatorIds.length > 0
+      ? await supabase.from('profiles').select('id, nome_azienda').in('id', creatorIds)
+      : { data: [] as { id: string; nome_azienda: string | null }[] }
+
+    setVenditeSommario({
+      totale_vendite: totaleVendite,
+      totale_incassato: totaleIncassato,
+      commissioni: totaleIncassato * 0.01,
+    })
+    setVenditeProdotti(
+      Object.entries(venditePerProdotto)
+        .map(([prodotto_id, d]) => ({
+          prodotto_id,
+          titolo: d.titolo,
+          creator: creatorProfiles?.find((p) => p.id === d.creatorId)?.nome_azienda || 'N/D',
+          vendite: d.vendite,
+          incassato: d.incassato,
+        }))
+        .sort((a, b) => b.vendite - a.vendite),
+    )
 
     // Uso per endpoint
     const perEndpoint: Record<string, { chiamate: number; token: number; costo: number; latenza: number[] }> = {}
@@ -148,6 +356,8 @@ export default function AdminDashboard() {
           costo_euro: costiPerUtente[s.user_id] || 0,
         }
       }))
+    } else {
+      setUtentiAttivi([])
     }
   }
 
@@ -280,6 +490,80 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* Feature adoption */}
+        {featureAdoption.length > 0 && (
+          <div>
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Feature adoption</h2>
+            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-100">
+                  <tr>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Feature</th>
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500">Utenti unici</th>
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500">% sul totale utenti</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {featureAdoption.map((f) => (
+                    <tr key={f.evento} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 font-mono text-xs text-[#0D1B2A]">{f.evento}</td>
+                      <td className="px-4 py-3 text-right text-gray-700">{f.utenti_unici}</td>
+                      <td className="px-4 py-3 text-right text-[#0E9F8E] font-medium">{f.pct}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Vendite prodotti digitali */}
+        {venditeSommario && (
+          <div>
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Vendite prodotti digitali</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+              <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+                <div className="text-2xl font-bold text-[#0D1B2A]">{venditeSommario.totale_vendite}</div>
+                <div className="text-xs text-gray-500 mt-1">Totale vendite</div>
+              </div>
+              <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+                <div className="text-2xl font-bold text-[#0E9F8E]">€{venditeSommario.totale_incassato.toFixed(2)}</div>
+                <div className="text-xs text-gray-500 mt-1">Totale incassato</div>
+              </div>
+              <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+                <div className="text-2xl font-bold text-orange-500">€{venditeSommario.commissioni.toFixed(2)}</div>
+                <div className="text-xs text-gray-500 mt-1">Commissioni piattaforma (1%)</div>
+              </div>
+            </div>
+            {venditeProdotti.length > 0 ? (
+              <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b border-gray-100">
+                    <tr>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Prodotto</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Creator</th>
+                      <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500">Vendite</th>
+                      <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500">Incassato</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {venditeProdotti.map((v) => (
+                      <tr key={v.prodotto_id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 font-medium text-[#0D1B2A]">{v.titolo}</td>
+                        <td className="px-4 py-3 text-gray-600">{v.creator}</td>
+                        <td className="px-4 py-3 text-right text-gray-700">{v.vendite}</td>
+                        <td className="px-4 py-3 text-right text-[#0E9F8E] font-medium">€{v.incassato.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400 text-center py-6">Nessuna vendita nel periodo selezionato</p>
+            )}
+          </div>
+        )}
+
         {/* Utenti attivi */}
         {utentiAttivi.length > 0 && (
           <div>
@@ -297,15 +581,102 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {utentiAttivi.map(u => (
-                    <tr key={u.user_id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-medium text-[#0D1B2A]">{u.nome_azienda}</td>
-                      <td className="px-4 py-3 text-right text-gray-700">{u.num_preventivi}</td>
-                      <td className="px-4 py-3 text-right text-gray-700">{u.numero_sessioni}</td>
-                      <td className="px-4 py-3 text-right text-orange-500">€{u.costo_euro.toFixed(4)}</td>
-                      <td className="px-4 py-3 text-right text-gray-400 text-xs">
-                        {new Date(u.ultimo_accesso).toLocaleDateString('it-IT')}
-                      </td>
-                    </tr>
+                    <Fragment key={u.user_id}>
+                      <tr
+                        onClick={() => toggleUtente(u.user_id)}
+                        className={`hover:bg-gray-50 cursor-pointer ${utenteEspanso === u.user_id ? 'bg-[#F0FDFB]' : ''}`}
+                      >
+                        <td className="px-4 py-3 font-medium text-[#0D1B2A]">
+                          <span className="mr-2 text-gray-400">{utenteEspanso === u.user_id ? '▼' : '▶'}</span>
+                          {u.nome_azienda}
+                        </td>
+                        <td className="px-4 py-3 text-right text-gray-700">{u.num_preventivi}</td>
+                        <td className="px-4 py-3 text-right text-gray-700">{u.numero_sessioni}</td>
+                        <td className="px-4 py-3 text-right text-orange-500">€{u.costo_euro.toFixed(4)}</td>
+                        <td className="px-4 py-3 text-right text-gray-400 text-xs">
+                          {new Date(u.ultimo_accesso).toLocaleDateString('it-IT')}
+                        </td>
+                      </tr>
+                      {utenteEspanso === u.user_id && (
+                        <tr>
+                          <td colSpan={5} className="px-4 py-4 bg-gray-50 border-t border-gray-100">
+                            {dettaglioLoading || !dettaglioUtente ? (
+                              <div className="flex justify-center py-6">
+                                <div className="w-5 h-5 border-2 border-[#0E9F8E] border-t-transparent rounded-full animate-spin" />
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                                <div>
+                                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Schermate visitate</h3>
+                                  {dettaglioUtente.schermate.length === 0 ? (
+                                    <p className="text-gray-400 text-xs">Nessuna</p>
+                                  ) : (
+                                    <ul className="space-y-1">
+                                      {dettaglioUtente.schermate.map((s) => (
+                                        <li key={s.nome} className="flex justify-between text-gray-700">
+                                          <span className="font-mono text-xs">{s.nome}</span>
+                                          <span className="font-semibold">{s.count}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </div>
+                                <div>
+                                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Feature usate</h3>
+                                  {dettaglioUtente.feature.length === 0 ? (
+                                    <p className="text-gray-400 text-xs">Nessuna</p>
+                                  ) : (
+                                    <ul className="space-y-1">
+                                      {dettaglioUtente.feature.map((f) => (
+                                        <li key={f.nome} className="flex justify-between text-gray-700">
+                                          <span className="font-mono text-xs">{f.nome}</span>
+                                          <span className="font-semibold">{f.count}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </div>
+                                <div>
+                                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Preventivi</h3>
+                                  <p className="text-gray-700">
+                                    {dettaglioUtente.preventivi_count} creati — €{dettaglioUtente.preventivi_importo.toFixed(2)} totale
+                                  </p>
+                                </div>
+                                <div>
+                                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Prodotti digitali</h3>
+                                  <p className="text-gray-700">
+                                    {dettaglioUtente.prodotti_creati} creati
+                                    {dettaglioUtente.vendite_count > 0 && (
+                                      <> — {dettaglioUtente.vendite_count} vendite (€{dettaglioUtente.vendite_incassato.toFixed(2)})</>
+                                    )}
+                                  </p>
+                                </div>
+                                <div className="md:col-span-2">
+                                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Timeline ultimi eventi</h3>
+                                  {dettaglioUtente.timeline.length === 0 ? (
+                                    <p className="text-gray-400 text-xs">Nessun evento</p>
+                                  ) : (
+                                    <ul className="space-y-1.5">
+                                      {dettaglioUtente.timeline.map((ev, i) => (
+                                        <li key={i} className="flex items-center gap-3 text-xs text-gray-600">
+                                          <span className="text-gray-400 w-32 shrink-0">
+                                            {new Date(ev.created_at).toLocaleString('it-IT')}
+                                          </span>
+                                          <span className="font-mono text-[#0D1B2A]">{ev.evento}</span>
+                                          {ev.schermata && (
+                                            <span className="text-gray-400">({ev.schermata})</span>
+                                          )}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
                   ))}
                 </tbody>
               </table>
