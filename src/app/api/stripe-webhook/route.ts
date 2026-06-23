@@ -154,8 +154,6 @@ async function inviaEmailDownload(
 export async function POST(req: NextRequest) {
   try {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
-    const skipVerificaFirma =
-      !webhookSecret || webhookSecret === 'placeholder'
 
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
     const supabaseAdmin = createClient(
@@ -167,8 +165,13 @@ export async function POST(req: NextRequest) {
     const body = await req.text()
     let event: Stripe.Event
 
-    if (skipVerificaFirma) {
-      event = JSON.parse(body) as Stripe.Event
+    if (!webhookSecret) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('STRIPE_WEBHOOK_SECRET non configurato — development mode')
+        event = JSON.parse(body) as Stripe.Event
+      } else {
+        return NextResponse.json({ error: 'Webhook non configurato' }, { status: 500 })
+      }
     } else {
       const signature = req.headers.get('stripe-signature')
 

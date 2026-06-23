@@ -5,10 +5,10 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 async function confermaAcquisto(
   supabaseAdmin: SupabaseClient,
   sessionId: string
-): Promise<string | null> {
+): Promise<{ titolo: string; email_cliente: string } | null> {
   const { data: acquisto, error: acquistoError } = await supabaseAdmin
     .from('acquisti_prodotti')
-    .select('id, prodotto_id, pagato')
+    .select('id, prodotto_id, pagato, email_cliente')
     .eq('stripe_session_id', sessionId)
     .maybeSingle()
 
@@ -26,12 +26,16 @@ async function confermaAcquisto(
 
   const { data: prodotto, error: prodottoError } = await supabaseAdmin
     .from('prodotti_digitali')
-    .select('link_download')
+    .select('titolo')
     .eq('id', acquisto.prodotto_id)
     .single()
 
   if (prodottoError) throw prodottoError
-  return prodotto.link_download as string
+
+  return {
+    titolo: prodotto.titolo as string,
+    email_cliente: acquisto.email_cliente,
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -60,20 +64,20 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const linkDownload = await confermaAcquisto(supabaseAdmin, session_id)
+    const risultato = await confermaAcquisto(supabaseAdmin, session_id)
 
-    if (!linkDownload) {
+    if (!risultato) {
       return NextResponse.json(
         { error: 'Acquisto non trovato' },
         { status: 404 }
       )
     }
 
-    const url = linkDownload.startsWith('http')
-      ? linkDownload
-      : `https://${linkDownload}`
-
-    return NextResponse.json({ pagato: true, link_download: url })
+    return NextResponse.json({
+      pagato: true,
+      titolo: risultato.titolo,
+      email: risultato.email_cliente,
+    })
   } catch (err) {
     console.error('verify-payment error:', err)
     return NextResponse.json(

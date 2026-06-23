@@ -1,19 +1,14 @@
 'use client'
 
 import { useEffect, useState, Suspense } from 'react'
-import { useParams, useSearchParams } from 'next/navigation'
-import { getProdottoBySlug } from '@/lib/prodotti'
+import { useSearchParams } from 'next/navigation'
 import { Loader2, Mail, XCircle } from 'lucide-react'
 
 function SuccessContent() {
-  const params = useParams()
-  const slug = params.slug as string
   const searchParams = useSearchParams()
   const sessionId = searchParams.get('session_id')
-  const email = searchParams.get('email') || ''
 
   const [stato, setStato] = useState<'loading' | 'ok' | 'errore'>('loading')
-  const [titolo, setTitolo] = useState('il prodotto')
   const [messaggio, setMessaggio] = useState('')
 
   useEffect(() => {
@@ -25,9 +20,6 @@ function SuccessContent() {
 
     void (async () => {
       try {
-        const prodotto = await getProdottoBySlug(slug)
-        if (prodotto?.titolo) setTitolo(prodotto.titolo)
-
         const res = await fetch('/api/verify-payment', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -46,7 +38,7 @@ function SuccessContent() {
         setMessaggio('Errore nella verifica del pagamento')
       }
     })()
-  }, [sessionId, slug])
+  }, [sessionId])
 
   if (stato === 'loading') {
     return (
@@ -71,26 +63,17 @@ function SuccessContent() {
 
   return (
     <div className="flex flex-col items-center py-16 px-6 text-center">
-      <h1 className="text-2xl sm:text-3xl font-bold text-[#0D1B2A] mb-6">
-        Pagamento completato!
-      </h1>
       <div className="w-20 h-20 rounded-full bg-[#E1F5EE] flex items-center justify-center mb-8">
         <Mail size={40} className="text-[#0E9F8E]" />
       </div>
-      <p className="text-base text-[#0D1B2A] leading-relaxed max-w-md mb-3">
-        Abbiamo inviato il link per scaricare{' '}
-        <strong>{titolo}</strong>
-        {email ? (
-          <>
-            {' '}
-            all&apos;indirizzo <strong>{email}</strong>.
-          </>
-        ) : (
-          '.'
-        )}
+      <h1 className="text-2xl sm:text-3xl font-bold text-[#0D1B2A] mb-4">
+        Pagamento completato!
+      </h1>
+      <p className="text-base text-[#0D1B2A] leading-relaxed max-w-md">
+        Controlla la tua email.
       </p>
-      <p className="text-sm text-gray-500 max-w-sm">
-        Controlla la tua casella email (e la cartella spam).
+      <p className="text-sm text-gray-500 max-w-sm mt-3">
+        Se non la vedi, controlla anche la cartella spam.
       </p>
     </div>
   )
