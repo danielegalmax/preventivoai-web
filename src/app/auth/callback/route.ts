@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { getPostLoginPath } from '@/lib/postLogin'
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
@@ -25,7 +26,10 @@ export async function GET(request: NextRequest) {
       }
     )
     const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) return NextResponse.redirect(`${origin}${next}`)
+    if (!error) {
+      const redirectPath = await getPostLoginPath(supabase, next)
+      return NextResponse.redirect(`${origin}${redirectPath}`)
+    }
   }
 
   return NextResponse.redirect(`${origin}/login?error=auth`)

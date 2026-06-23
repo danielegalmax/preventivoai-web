@@ -4,6 +4,7 @@ import { Suspense, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { getPostLoginPath } from '@/lib/postLogin'
 import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react'
 
 /** Imposta `true` per riattivare tab e form di registrazione. */
@@ -40,7 +41,11 @@ function LoginContent() {
       else {
         const { data: { session } } = await supabase.auth.getSession()
         if (session) {
-          router.push(params.get('next') ?? '/dashboard')
+          const redirectPath = await getPostLoginPath(
+            supabase,
+            params.get('next') ?? '/dashboard'
+          )
+          router.push(redirectPath)
           router.refresh()
         }
       }

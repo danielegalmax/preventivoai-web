@@ -9,6 +9,7 @@ import type { ReactNode } from 'react'
 const NAV_ITEMS = [
   { label: 'Dashboard', href: '/dashboard' },
   { label: 'Prodotti digitali', href: '/dashboard/prodotti' },
+  { label: 'Scarica app', href: '/scarica' },
 ] as const
 
 type Props = {
