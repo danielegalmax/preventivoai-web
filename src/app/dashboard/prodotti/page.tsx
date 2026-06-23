@@ -18,6 +18,7 @@ export default function ProdottiPage() {
   const [prodotti, setProdotti] = useState<ProdottoConVendite[]>([])
   const [loading, setLoading] = useState(true)
   const [copiato, setCopiato] = useState<string | null>(null)
+  const [mostraBannerStripe, setMostraBannerStripe] = useState(false)
 
   useEffect(() => {
     void carica()
@@ -34,10 +35,11 @@ export default function ProdottiPage() {
 
     const { data: prof } = await supabase
       .from('profiles')
-      .select('nome_azienda')
+      .select('nome_azienda, stripe_account_id, stripe_charges_enabled')
       .eq('id', user.id)
       .single()
     if (prof?.nome_azienda) setNomeAzienda(prof.nome_azienda)
+    setMostraBannerStripe(prof?.stripe_charges_enabled !== true)
 
     try {
       const lista = await getProdottiUtente(user.id)
@@ -90,6 +92,14 @@ export default function ProdottiPage() {
       activeRoute="/dashboard/prodotti"
     >
       <div className="-mx-4 -mt-8 px-4 pt-8 pb-10 min-h-[calc(100vh-120px)] bg-gradient-to-b from-[#F0FDFB] to-[#F7F8FA]">
+        {mostraBannerStripe && (
+          <div className="mb-6 rounded-xl border border-amber-300 bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
+            ⚠️ Collega il tuo account Stripe per ricevere i pagamenti dei tuoi
+            prodotti digitali. I pagamenti verranno gestiti dalla piattaforma
+            fino alla connessione.
+          </div>
+        )}
+
         <div className="flex items-start gap-4 mb-2">
           <div className="w-14 h-14 rounded-2xl bg-[#E1F5EE] flex items-center justify-center shrink-0">
             <Package size={28} className="text-[#0E9F8E]" />
