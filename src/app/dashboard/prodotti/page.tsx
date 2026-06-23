@@ -148,10 +148,15 @@ export default function ProdottiPage() {
           <div className="flex flex-col gap-4">
             {prodotti.map((p) => {
               const stats = statistiche[p.id] ?? { vendite: 0, incassato: 0 }
+              const haVendite = stats.vendite > 0
               return (
               <div
                 key={p.id}
-                className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow"
+                className={`rounded-2xl p-6 shadow-sm hover:shadow-md transition-all ${
+                  haVendite
+                    ? 'bg-gradient-to-br from-[#ECFDF8] via-[#F4FBF9] to-white border border-[#0E9F8E]/30 ring-1 ring-[#0E9F8E]/10'
+                    : 'bg-white border border-gray-200'
+                }`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                   <div className="min-w-0 flex-1">
@@ -172,13 +177,13 @@ export default function ProdottiPage() {
                     <p className="text-2xl font-bold text-[#0E9F8E]">
                       {formatEuro(p.prezzo)}
                     </p>
-                    {stats.vendite > 0 ? (
-                      <p className="text-sm font-medium text-[#085041] mt-2">
-                        <span className="text-[#0E9F8E]">●</span>{' '}
+                    {haVendite ? (
+                      <span className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full bg-[#D1FAE5]/80 text-sm font-medium text-[#065F46]">
+                        <span className="text-[#0E9F8E]">●</span>
                         {stats.vendite}{' '}
                         {stats.vendite === 1 ? 'vendita' : 'vendite'} ·{' '}
                         {formatEuro(stats.incassato)} incassati
-                      </p>
+                      </span>
                     ) : (
                       <p className="text-sm text-gray-400 mt-2">
                         Nessuna vendita ancora
@@ -187,7 +192,13 @@ export default function ProdottiPage() {
                   </div>
                 </div>
 
-                <div className="mt-4 flex items-center gap-2 p-3 bg-[#F7F8FA] rounded-xl border border-gray-100">
+                <div
+                  className={`mt-4 flex items-center gap-2 p-3 rounded-xl border ${
+                    haVendite
+                      ? 'bg-white/70 border-[#0E9F8E]/15'
+                      : 'bg-[#F7F8FA] border-gray-100'
+                  }`}
+                >
                   <Link2 size={14} className="text-gray-400 shrink-0" />
                   <span className="text-xs font-mono text-gray-500 truncate flex-1">
                     /store/{p.slug}
