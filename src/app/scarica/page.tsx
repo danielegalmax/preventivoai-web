@@ -6,7 +6,8 @@ import { supabase } from '@/lib/supabase'
 import { DashboardLayout } from '@/components/DashboardLayout'
 
 const APK_URL = '#'
-const WINDOWS_INSTALLER_URL = '#'
+const WINDOWS_INSTALLER_URL =
+  'https://github.com/danielegalmax/preventivoai-desktop/releases/download/v0.1.1-beta/preventivoai-desktop_0.1.0_x64-setup.exe'
 
 function AndroidIcon() {
   return (
