@@ -73,6 +73,7 @@ function buildDownloadEmailHtml(titolo: string, linkDownload: string): string {
 }
 
 async function inviaEmailDownload(
+  resend: Resend,
   emailCliente: string,
   titolo: string,
   linkDownload: string
@@ -82,7 +83,6 @@ async function inviaEmailDownload(
     return
   }
 
-  const resend = new Resend(process.env.RESEND_API_KEY)
   const { data, error } = await resend.emails.send({
     from: 'PreventivoAI <onboarding@resend.dev>',
     to: emailCliente,
@@ -110,6 +110,7 @@ export async function POST(req: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
+    const resend = new Resend(process.env.RESEND_API_KEY!)
 
     const body = await req.text()
     let event: Stripe.Event
@@ -146,6 +147,7 @@ export async function POST(req: NextRequest) {
           if (risultato && !risultato.giaConfermato) {
             try {
               await inviaEmailDownload(
+                resend,
                 risultato.email_cliente,
                 risultato.titolo,
                 risultato.link_download
