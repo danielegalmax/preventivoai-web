@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import {
   getProdottiUtente,
+  getStatisticheProdotti,
   eliminaProdotto,
   type ProdottoDigitale,
 } from '@/lib/prodotti'
@@ -11,11 +12,14 @@ import { formatEuro } from '@/lib/formatEuro'
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { Plus, Copy, Pencil, Trash2, Package, Link2 } from 'lucide-react'
 
-type ProdottoConVendite = ProdottoDigitale & { vendite: number }
+type StatisticheProdotto = { vendite: number; incassato: number }
 
 export default function ProdottiPage() {
   const [nomeAzienda, setNomeAzienda] = useState('')
-  const [prodotti, setProdotti] = useState<ProdottoConVendite[]>([])
+  const [prodotti, setProdotti] = useState<ProdottoDigitale[]>([])
+  const [statistiche, setStatistiche] = useState<
+    Record<string, StatisticheProdotto>
+  >({})
   const [loading, setLoading] = useState(true)
   const [copiato, setCopiato] = useState<string | null>(null)
   const [mostraBannerStripe, setMostraBannerStripe] = useState(false)
@@ -42,18 +46,12 @@ export default function ProdottiPage() {
     setMostraBannerStripe(prof?.stripe_charges_enabled !== true)
 
     try {
-      const lista = await getProdottiUtente(user.id)
-      const conVendite: ProdottoConVendite[] = await Promise.all(
-        lista.map(async (p) => {
-          const { count } = await supabase
-            .from('acquisti_prodotti')
-            .select('*', { count: 'exact', head: true })
-            .eq('prodotto_id', p.id)
-            .eq('pagato', true)
-          return { ...p, vendite: count ?? 0 }
-        })
-      )
-      setProdotti(conVendite)
+      const [lista, stats] = await Promise.all([
+        getProdottiUtente(user.id),
+        getStatisticheProdotti(user.id),
+      ])
+      setProdotti(lista)
+      setStatistiche(stats)
     } catch (err) {
       console.error(err)
     }
@@ -148,7 +146,9 @@ export default function ProdottiPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-4">
-            {prodotti.map((p) => (
+            {prodotti.map((p) => {
+              const stats = statistiche[p.id] ?? { vendite: 0, incassato: 0 }
+              return (
               <div
                 key={p.id}
                 className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow"
@@ -172,12 +172,18 @@ export default function ProdottiPage() {
                     <p className="text-2xl font-bold text-[#0E9F8E]">
                       {formatEuro(p.prezzo)}
                     </p>
-                    <p className="text-sm text-gray-500 mt-2">
-                      <span className="font-semibold text-[#0D1B2A]">
-                        {p.vendite}
-                      </span>{' '}
-                      {p.vendite === 1 ? 'vendita' : 'vendite'}
-                    </p>
+                    {stats.vendite > 0 ? (
+                      <p className="text-sm font-medium text-[#085041] mt-2">
+                        <span className="text-[#0E9F8E]">●</span>{' '}
+                        {stats.vendite}{' '}
+                        {stats.vendite === 1 ? 'vendita' : 'vendite'} ·{' '}
+                        {formatEuro(stats.incassato)} incassati
+                      </p>
+                    ) : (
+                      <p className="text-sm text-gray-400 mt-2">
+                        Nessuna vendita ancora
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -217,7 +223,7 @@ export default function ProdottiPage() {
                   </button>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         )}
       </div>

@@ -254,3 +254,33 @@ export async function getAcquistiProdotto(
   if (error) throw error
   return (data ?? []) as AcquistoProdotto[]
 }
+
+export async function getStatisticheProdotti(
+  userId: string
+): Promise<Record<string, { vendite: number; incassato: number }>> {
+  const { data, error } = await supabase
+    .from('acquisti_prodotti')
+    .select('prodotto_id, prodotti_digitali!inner(user_id, prezzo)')
+    .eq('pagato', true)
+    .eq('prodotti_digitali.user_id', userId)
+
+  if (error) throw error
+
+  const stats: Record<string, { vendite: number; incassato: number }> = {}
+
+  for (const row of data ?? []) {
+    const prodottoId = row.prodotto_id as string
+    const raw = row.prodotti_digitali as
+      | { prezzo: number }
+      | { prezzo: number }[]
+    const prodotto = Array.isArray(raw) ? raw[0] : raw
+    if (!prodotto) continue
+    if (!stats[prodottoId]) {
+      stats[prodottoId] = { vendite: 0, incassato: 0 }
+    }
+    stats[prodottoId].vendite += 1
+    stats[prodottoId].incassato += prodotto.prezzo
+  }
+
+  return stats
+}
