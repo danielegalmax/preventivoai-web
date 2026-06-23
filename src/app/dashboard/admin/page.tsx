@@ -105,6 +105,18 @@ const NOMI_EVENTI: Record<string, string> = {
   schermata_aperta: '👁️ Visualizzazioni schermata',
   cliente_creato: '👤 Cliente creato',
   prodotto_venduto: '🛍️ Prodotto venduto',
+  listino_smart: '🤖 Listino Smart AI',
+  home_aperta: '🏠 Home aperta',
+  storico_aperto: '📋 Storico aperto',
+  clienti_aperti: '👥 Clienti aperti',
+  cliente_dettaglio_aperto: '👤 Dettaglio cliente',
+  chat_aperta: '💬 Chat aperta',
+  builder_aperto: '🔨 Builder aperto',
+  builder_pdf_generato: '📄 PDF da builder',
+  preview_pdf_aperta: '👁️ Anteprima PDF',
+  listino_aperto: '📝 Listino aperto',
+  pdf_condiviso: '📤 PDF condiviso',
+  prodotti_digitali_aperti: '🛍️ Prodotti digitali aperti',
 }
 
 const SCHERMATE_MOBILE = new Set([
