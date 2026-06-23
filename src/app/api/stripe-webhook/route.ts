@@ -71,7 +71,7 @@ function buildDownloadEmailHtml(titolo: string, linkDownload: string): string {
 }
 
 async function inviaEmailDownload(
-  resend: { emails: { send: (options: unknown) => Promise<{ data: unknown; error: { message: string } | null }> } },  emailCliente: string,
+  resend: any,  emailCliente: string,
   titolo: string,
   linkDownload: string
 ): Promise<void> {
