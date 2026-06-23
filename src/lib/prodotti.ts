@@ -15,6 +15,7 @@ export interface ProdottoDigitale {
 
 export interface ProdottoPubblico {
   id: string
+  user_id: string
   titolo: string
   descrizione: string | null
   prezzo: number
@@ -52,7 +53,19 @@ export interface AggiornaProdottoInput {
 }
 
 const CAMPI_PUBBLICI =
-  'id, titolo, descrizione, prezzo, slug, link_preview, attivo'
+  'id, user_id, titolo, descrizione, prezzo, slug, link_preview, attivo'
+
+export async function getStripeAccountArtigiano(
+  userId: string
+): Promise<string | null> {
+  const { data } = await supabase
+    .from('profiles')
+    .select('stripe_account_id, stripe_charges_enabled')
+    .eq('id', userId)
+    .single()
+  if (!data?.stripe_charges_enabled) return null
+  return data.stripe_account_id ?? null
+}
 
 export function generaSlug(titolo: string): string {
   const base = titolo

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { ArrowLeft, Save, Loader2 } from 'lucide-react'
+import { DashboardLayout } from '@/components/DashboardLayout'
+import { Loader2 } from 'lucide-react'
 
 export default function Settings() {
   const [form, setForm] = useState({
@@ -62,19 +63,7 @@ export default function Settings() {
   )
 
   return (
-    <div className="min-h-screen bg-[#F7F8FA]">
-      <header className="bg-[#0D1B2A] px-6 py-4 flex items-center gap-4">
-        <button onClick={() => window.location.href = '/dashboard'}
-          className="text-gray-400 hover:text-white transition-colors">
-          <ArrowLeft size={20} />
-        </button>
-        <h1 className="text-base font-semibold text-white tracking-tight">
-          Preventivo<span className="text-[#2DD4BF]">AI</span>
-          <span className="text-gray-400 font-normal ml-2">— Impostazioni</span>
-        </h1>
-      </header>
-
-      <main className="max-w-2xl mx-auto px-4 py-8">
+    <DashboardLayout nomeAzienda={form.nome_azienda || 'Artigiano'} activeRoute="/dashboard/settings">
 
         <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm mb-4">
           <h2 className="text-base font-semibold text-[#0D1B2A] mb-5">Dati azienda</h2>
@@ -162,7 +151,6 @@ export default function Settings() {
           {saved ? '✓ Salvato!' : 'Salva impostazioni'}
         </button>
 
-      </main>
-    </div>
+    </DashboardLayout>
   )
 }

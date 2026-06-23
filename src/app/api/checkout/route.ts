@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
-import { getProdottoBySlug } from '@/lib/prodotti'
+import { getProdottoBySlug, getStripeAccountArtigiano } from '@/lib/prodotti'
 
 function baseUrl(req: NextRequest): string {
   const origin = req.headers.get('origin')
@@ -39,8 +39,10 @@ export async function POST(req: NextRequest) {
 
     const origin = baseUrl(req)
     const unitAmount = Math.round(prodotto.prezzo * 100)
+    const applicationFeeAmount = Math.round(unitAmount * 0.01)
+    const stripeAccountId = await getStripeAccountArtigiano(prodotto.user_id)
 
-    const session = await stripe.checkout.sessions.create({
+    const sessionBase: Stripe.Checkout.SessionCreateParams = {
       mode: 'payment',
       payment_method_types: ['card'],
       customer_email: email,
@@ -57,13 +59,25 @@ export async function POST(req: NextRequest) {
           },
         },
       ],
-      success_url: `${origin}/store/${slug}/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${origin}/store/${slug}/success?session_id={CHECKOUT_SESSION_ID}&email=${encodeURIComponent(email)}`,
       cancel_url: `${origin}/store/${slug}`,
       metadata: {
         prodotto_id: prodotto.id,
         email_cliente: email,
       },
-    })
+    }
+
+    const session = stripeAccountId
+      ? await stripe.checkout.sessions.create({
+          ...sessionBase,
+          payment_intent_data: {
+            application_fee_amount: applicationFeeAmount,
+            transfer_data: {
+              destination: stripeAccountId,
+            },
+          },
+        })
+      : await stripe.checkout.sessions.create(sessionBase)
 
     if (!session.id) {
       return NextResponse.json(

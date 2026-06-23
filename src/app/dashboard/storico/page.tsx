@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { ArrowLeft, FileText, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
+import { DashboardLayout } from '@/components/DashboardLayout'
+import { FileText, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 
 interface Preventivo {
   id: string
@@ -15,6 +16,7 @@ interface Preventivo {
 }
 
 export default function Storico() {
+  const [nomeAzienda, setNomeAzienda] = useState('')
   const [preventivi, setPreventivi] = useState<Preventivo[]>([])
   const [loading, setLoading] = useState(true)
   const [aperto, setAperto] = useState<string | null>(null)
@@ -24,6 +26,8 @@ export default function Storico() {
   async function carica() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { window.location.href = '/login'; return }
+    const { data: prof } = await supabase.from('profiles').select('nome_azienda').eq('id', user.id).single()
+    if (prof?.nome_azienda) setNomeAzienda(prof.nome_azienda)
     const { data } = await supabase
       .from('preventivi')
       .select('*')
@@ -61,20 +65,7 @@ export default function Storico() {
   )
 
   return (
-    <div className="min-h-screen bg-[#F7F8FA]">
-      <header className="bg-[#0D1B2A] px-6 py-4 flex items-center gap-4">
-        <button onClick={() => window.location.href = '/dashboard'}
-          className="text-gray-400 hover:text-white transition-colors">
-          <ArrowLeft size={20} />
-        </button>
-        <h1 className="text-base font-semibold text-white tracking-tight">
-          Preventivo<span className="text-[#2DD4BF]">AI</span>
-          <span className="text-gray-400 font-normal ml-2">— Storico</span>
-        </h1>
-      </header>
-
-      <main className="max-w-2xl mx-auto px-4 py-8">
-
+    <DashboardLayout nomeAzienda={nomeAzienda || 'Artigiano'} activeRoute="/dashboard/storico">
         {preventivi.length === 0 ? (
           <div className="text-center mt-16">
             <FileText size={40} className="text-gray-200 mx-auto mb-3" />
@@ -152,7 +143,6 @@ export default function Storico() {
             ))}
           </div>
         )}
-      </main>
-    </div>
+    </DashboardLayout>
   )
 }

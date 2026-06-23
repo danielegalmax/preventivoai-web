@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { getProdottoBySlug, type ProdottoPubblico } from '@/lib/prodotti'
 import { formatEuro } from '@/lib/formatEuro'
-import { Loader2, ExternalLink, ShoppingCart } from 'lucide-react'
+import { Loader2, ExternalLink } from 'lucide-react'
 
 export default function StorePage() {
   const params = useParams()
@@ -49,16 +49,16 @@ export default function StorePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center">
-        <Loader2 size={28} className="animate-spin text-[#0E9F8E]" />
+      <div className="min-h-screen bg-gradient-to-b from-[#0D1B2A] to-[#1a2f45] flex items-center justify-center">
+        <Loader2 size={32} className="animate-spin text-[#2DD4BF]" />
       </div>
     )
   }
 
   if (!prodotto) {
     return (
-      <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center px-4">
-        <div className="text-center">
+      <div className="min-h-screen bg-gradient-to-b from-[#0D1B2A] to-[#1a2f45] flex items-center justify-center px-4">
+        <div className="bg-white rounded-2xl p-8 text-center max-w-md w-full shadow-xl">
           <h1 className="text-xl font-semibold text-[#0D1B2A]">
             Prodotto non trovato
           </h1>
@@ -73,32 +73,28 @@ export default function StorePage() {
   const prezzoFormatted = formatEuro(prodotto.prezzo)
 
   return (
-    <div className="min-h-screen bg-[#F7F8FA]">
-      <header className="bg-[#0D1B2A] px-6 py-5">
-        <h1 className="text-lg font-semibold text-white tracking-tight text-center">
-          Preventivo<span className="text-[#2DD4BF]">AI</span>
-          <span className="text-gray-400 font-normal text-sm ml-2">Store</span>
-        </h1>
-      </header>
+    <div className="min-h-screen bg-gradient-to-b from-[#0D1B2A] to-[#1a2f45] flex flex-col">
+      <main className="flex-1 flex items-center justify-center px-4 py-10">
+        <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
+          <div className="p-8">
+            <span className="inline-block text-xs font-semibold uppercase tracking-wide text-[#0E9F8E] bg-[#E1F5EE] px-3 py-1 rounded-full mb-5">
+              Prodotto digitale
+            </span>
 
-      <main className="max-w-lg mx-auto px-4 py-10">
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-          <div className="bg-[#0D1B2A] px-6 py-8 text-center">
-            <h2 className="text-xl font-semibold text-white leading-snug">
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#0D1B2A] leading-tight">
               {prodotto.titolo}
-            </h2>
-            {prezzoFormatted && (
-              <div className="text-3xl font-bold text-[#2DD4BF] mt-3">
-                {prezzoFormatted}
-              </div>
-            )}
-          </div>
+            </h1>
 
-          <div className="p-6">
             {prodotto.descrizione && (
-              <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap mb-6">
+              <p className="text-sm text-gray-500 leading-relaxed mt-4 whitespace-pre-wrap">
                 {prodotto.descrizione}
               </p>
+            )}
+
+            {prezzoFormatted && (
+              <div className="text-4xl font-bold text-[#0E9F8E] mt-6">
+                {prezzoFormatted}
+              </div>
             )}
 
             {prodotto.link_preview && (
@@ -106,12 +102,14 @@ export default function StorePage() {
                 href={prodotto.link_preview}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full py-3 mb-6 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:border-[#0E9F8E] hover:text-[#0E9F8E] transition-all"
+                className="mt-6 flex items-center justify-center gap-2 w-full py-3 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:border-[#0E9F8E] hover:text-[#0E9F8E] transition-all"
               >
                 <ExternalLink size={16} />
                 Guarda anteprima
               </a>
             )}
+
+            <hr className="my-8 border-gray-100" />
 
             {!prodotto.attivo ? (
               <div className="text-center py-4 text-sm text-gray-500 bg-gray-50 rounded-xl">
@@ -120,7 +118,7 @@ export default function StorePage() {
             ) : (
               <>
                 <div className="mb-4">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                  <label className="block text-sm font-medium text-[#0D1B2A] mb-2">
                     La tua email
                   </label>
                   <input
@@ -128,11 +126,8 @@ export default function StorePage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="nome@email.com"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-[#F7F8FA] focus:bg-white focus:border-[#0E9F8E] outline-none"
+                    className="w-full px-4 py-3.5 border border-gray-200 rounded-xl text-sm bg-[#F7F8FA] focus:bg-white focus:border-[#0E9F8E] outline-none transition-colors"
                   />
-                  <p className="text-xs text-gray-400 mt-1.5">
-                    Riceverai il link download a questa email dopo il pagamento
-                  </p>
                 </div>
 
                 {errore && (
@@ -142,26 +137,29 @@ export default function StorePage() {
                 <button
                   onClick={acquista}
                   disabled={checkoutLoading || !email.trim()}
-                  className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#0E9F8E] text-white rounded-xl font-semibold text-sm hover:bg-[#0b8a7a] transition-all disabled:opacity-50"
+                  className="w-full py-4 bg-[#0E9F8E] text-white rounded-xl font-semibold text-base hover:bg-[#0b8a7a] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {checkoutLoading ? (
-                    <Loader2 size={18} className="animate-spin" />
+                    <Loader2 size={20} className="animate-spin" />
                   ) : (
-                    <>
-                      <ShoppingCart size={18} />
-                      Acquista
-                    </>
+                    `Acquista ora — ${prezzoFormatted ?? ''}`
                   )}
                 </button>
 
-                <p className="text-xs text-gray-400 text-center mt-4">
-                  Pagamento sicuro con Stripe
+                <p className="text-xs text-gray-400 text-center mt-5">
+                  Pagamento sicuro con Stripe • Ricevi il link via email
                 </p>
               </>
             )}
           </div>
         </div>
       </main>
+
+      <footer className="pb-8 text-center">
+        <p className="text-sm text-white/50">
+          Preventivo<span className="text-[#2DD4BF]">AI</span>
+        </p>
+      </footer>
     </div>
   )
 }

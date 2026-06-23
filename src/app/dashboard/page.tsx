@@ -2,12 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { LogOut, FileText, Plus, Settings, TrendingUp } from 'lucide-react'
-
-interface Profile {
-  nome_azienda: string | null
-  plan: string
-}
+import { getProdottiUtente } from '@/lib/prodotti'
+import { DashboardLayout } from '@/components/DashboardLayout'
+import { FileText } from 'lucide-react'
 
 interface Preventivo {
   id: string
@@ -18,44 +15,61 @@ interface Preventivo {
 }
 
 export default function Dashboard() {
-  const [profile, setProfile] = useState<Profile | null>(null)
-  const [preventivi, setPreventivi] = useState<Preventivo[]>([])
+  const [nomeAzienda, setNomeAzienda] = useState('')
+  const [totalePreventivi, setTotalePreventivi] = useState(0)
+  const [ultimiPreventivi, setUltimiPreventivi] = useState<Preventivo[]>([])
+  const [prodottiAttivi, setProdottiAttivi] = useState(0)
+  const [totaleVendite, setTotaleVendite] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    checkUser()
+    void carica()
   }, [])
 
-  async function checkUser() {
-    const { data: { user } } = await supabase.auth.getUser()
+  async function carica() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (!user) {
       window.location.href = '/login'
       return
     }
-    await loadData(user.id)
-    setLoading(false)
-  }
 
-  async function loadData(userId: string) {
     const { data: prof } = await supabase
       .from('profiles')
-      .select('nome_azienda, plan')
-      .eq('id', userId)
+      .select('nome_azienda')
+      .eq('id', user.id)
       .single()
-    if (prof) setProfile(prof)
+    if (prof?.nome_azienda) setNomeAzienda(prof.nome_azienda)
+
+    const { count: countPreventivi } = await supabase
+      .from('preventivi')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+    setTotalePreventivi(countPreventivi ?? 0)
 
     const { data: prevs } = await supabase
       .from('preventivi')
       .select('id, nome_cliente, importo_totale, stato, created_at')
-      .eq('user_id', userId)
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(5)
-    if (prevs) setPreventivi(prevs)
-  }
+    if (prevs) setUltimiPreventivi(prevs)
 
-  async function handleLogout() {
-    await supabase.auth.signOut()
-    window.location.href = '/login'
+    const prodotti = await getProdottiUtente(user.id)
+    setProdottiAttivi(prodotti.filter((p) => p.attivo).length)
+
+    const productIds = prodotti.map((p) => p.id)
+    if (productIds.length > 0) {
+      const { count: countVendite } = await supabase
+        .from('acquisti_prodotti')
+        .select('*', { count: 'exact', head: true })
+        .in('prodotto_id', productIds)
+        .eq('pagato', true)
+      setTotaleVendite(countVendite ?? 0)
+    }
+
+    setLoading(false)
   }
 
   if (loading) {
@@ -66,116 +80,98 @@ export default function Dashboard() {
     )
   }
 
-  const nomeDisplay = profile?.nome_azienda || 'Artigiano'
-  const plan = profile?.plan || 'starter'
-  const planLabel = plan === 'pro' ? 'Pro' : plan === 'business' ? 'Business' : 'Starter'
-  const planColor = plan === 'pro' ? 'bg-[#E1F5EE] text-[#085041]' : plan === 'business' ? 'bg-[#E6F1FB] text-[#0C447C]' : 'bg-gray-100 text-gray-600'
-  const totaleValore = preventivi.reduce((acc, p) => acc + (p.importo_totale || 0), 0).toFixed(0)
-  const minRisparmiate = Math.round(preventivi.length * 23)
-
   return (
-    <div className="min-h-screen bg-[#F7F8FA]">
+    <DashboardLayout
+      nomeAzienda={nomeAzienda || 'Artigiano'}
+      activeRoute="/dashboard"
+    >
+      <div className="mb-8">
+        <h2 className="text-2xl font-semibold text-[#0D1B2A] tracking-tight">
+          Panoramica
+        </h2>
+        <p className="text-sm text-gray-500 mt-1">
+          Riepilogo della tua attività su PreventivoAI
+        </p>
+      </div>
 
-      <header className="bg-[#0D1B2A] px-6 py-4 flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-white tracking-tight">
-          Preventivo<span className="text-[#2DD4BF]">AI</span>
-        </h1>
-        <div className="flex items-center gap-3">
-          <span className={`text-xs font-medium px-3 py-1 rounded-full ${planColor}`}>
-            {planLabel}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+          <div className="text-2xl font-semibold text-[#0D1B2A]">
+            {totalePreventivi}
+          </div>
+          <div className="text-xs text-gray-500 mt-1">Preventivi creati</div>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+          <div className="text-2xl font-semibold text-[#0E9F8E]">
+            {prodottiAttivi}
+          </div>
+          <div className="text-xs text-gray-500 mt-1">
+            Prodotti digitali attivi
+          </div>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+          <div className="text-2xl font-semibold text-[#0D1B2A]">
+            {totaleVendite}
+          </div>
+          <div className="text-xs text-gray-500 mt-1">
+            Vendite prodotti digitali
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm">
+        <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100">
+          <FileText size={15} className="text-gray-400" />
+          <span className="text-sm font-medium text-[#0D1B2A]">
+            Ultimi preventivi
           </span>
-          <button onClick={handleLogout} className="text-gray-400 hover:text-white transition-colors">
-            <LogOut size={18} />
-          </button>
-        </div>
-      </header>
-
-      <main className="max-w-2xl mx-auto px-4 py-8">
-
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-[#0D1B2A] tracking-tight">
-            Ciao {nomeDisplay} 👋
-          </h2>
-          <p className="text-sm text-gray-500 mt-1">Cosa vuoi fare oggi?</p>
         </div>
 
-        <div className="flex items-center gap-4 bg-[#0D1B2A] text-white rounded-2xl p-6 mb-6 cursor-pointer hover:bg-[#162540] transition-all"
-          onClick={() => window.location.href = '/dashboard/nuovo'}>
-          <div className="w-12 h-12 bg-[#0E9F8E] rounded-xl flex items-center justify-center flex-shrink-0">
-            <Plus size={22} />
+        {ultimiPreventivi.length === 0 ? (
+          <div className="px-5 py-10 text-center text-sm text-gray-400">
+            Nessun preventivo ancora.
           </div>
-          <div>
-            <div className="font-semibold text-base">Genera nuovo preventivo</div>
-            <div className="text-sm text-gray-400 mt-0.5">Incolla il messaggio del cliente e ricevi il PDF in 10 secondi</div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          <div className="bg-white border border-gray-200 rounded-2xl p-4 text-center shadow-sm">
-            <div className="text-2xl font-semibold text-[#0D1B2A]">{preventivi.length}</div>
-            <div className="text-xs text-gray-500 mt-1">Preventivi</div>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-2xl p-4 text-center shadow-sm">
-            <div className="text-2xl font-semibold text-[#0E9F8E]">€{totaleValore}</div>
-            <div className="text-xs text-gray-500 mt-1">Valore totale</div>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-2xl p-4 text-center shadow-sm">
-            <div className="text-2xl font-semibold text-[#0D1B2A]">{minRisparmiate}</div>
-            <div className="text-xs text-gray-500 mt-1">Min. risparmiate</div>
-          </div>
-        </div>
-
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm mb-4">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-            <div className="flex items-center gap-2">
-              <FileText size={15} className="text-gray-400" />
-              <span className="text-sm font-medium text-[#0D1B2A]">Ultimi preventivi</span>
-            </div>
-            <span onClick={() => window.location.href = '/dashboard/storico'}
-              className="text-xs text-[#0E9F8E] hover:underline cursor-pointer">
-              Vedi tutti
-            </span>
-          </div>
-
-          {preventivi.length === 0 ? (
-            <div className="px-5 py-8 text-center">
-              <TrendingUp size={28} className="text-gray-200 mx-auto mb-2" />
-              <p className="text-sm text-gray-400">Nessun preventivo ancora.</p>
-              <p className="text-xs text-gray-300 mt-1">Generane uno per iniziare.</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-50">
-              {preventivi.map(p => (
-                <div key={p.id} className="flex items-center justify-between px-5 py-3.5">
-                  <div>
-                    <div className="text-sm font-medium text-[#0D1B2A]">
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs text-gray-400 border-b border-gray-50">
+                  <th className="px-5 py-3 font-medium">Cliente</th>
+                  <th className="px-5 py-3 font-medium">Importo</th>
+                  <th className="px-5 py-3 font-medium">Stato</th>
+                  <th className="px-5 py-3 font-medium">Data</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {ultimiPreventivi.map((p) => (
+                  <tr key={p.id}>
+                    <td className="px-5 py-3.5 font-medium text-[#0D1B2A]">
                       {p.nome_cliente || 'Cliente'}
-                    </div>
-                    <div className="text-xs text-gray-400 mt-0.5">
-                      {new Date(p.created_at).toLocaleDateString('it-IT')}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-semibold text-[#0D1B2A]">
+                    </td>
+                    <td className="px-5 py-3.5 text-[#0D1B2A]">
                       {p.importo_totale ? `€${p.importo_totale}` : '—'}
-                    </div>
-                    <div className={`text-xs mt-0.5 ${p.stato === 'inviato' ? 'text-[#0E9F8E]' : 'text-gray-400'}`}>
-                      {p.stato}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div onClick={() => window.location.href = '/dashboard/settings'}
-          className="flex items-center gap-3 bg-white border border-gray-200 rounded-2xl px-5 py-4 shadow-sm hover:border-gray-300 transition-all cursor-pointer">
-          <Settings size={16} className="text-gray-400" />
-          <span className="text-sm text-gray-600">Impostazioni profilo e listino</span>
-        </div>
-
-      </main>
-    </div>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <span
+                        className={`text-xs font-medium ${
+                          p.stato === 'inviato'
+                            ? 'text-[#0E9F8E]'
+                            : 'text-gray-500'
+                        }`}
+                      >
+                        {p.stato}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5 text-gray-400">
+                      {new Date(p.created_at).toLocaleDateString('it-IT')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </DashboardLayout>
   )
 }
