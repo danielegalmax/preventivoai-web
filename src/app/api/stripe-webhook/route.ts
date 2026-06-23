@@ -3,8 +3,6 @@ import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
-
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -106,6 +104,8 @@ export async function POST(req: NextRequest) {
   if (!webhookSecret || webhookSecret === 'placeholder') {
     return NextResponse.json({ received: true })
   }
+
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
   const body = await req.text()
   const signature = req.headers.get('stripe-signature')
