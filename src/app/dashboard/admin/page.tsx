@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useEffect, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
 interface StatoGenerale {
@@ -14,10 +14,19 @@ interface StatoGenerale {
   costo_oggi_euro: number
 }
 
+interface EventoRaw {
+  evento: string
+  schermata: string | null
+  user_id: string
+}
+
 interface EventoFrequente {
   evento: string
   count: number
+  schermata: string | null
 }
+
+type FiltroPiattaforma = 'tutte' | 'mobile' | 'desktop'
 
 interface UsaggioEndpoint {
   endpoint: string
@@ -81,20 +90,127 @@ function parseProdottoJoin(raw: unknown): ProdottoDigitaleJoin | null {
   return p
 }
 
+const NOMI_EVENTI: Record<string, string> = {
+  firma_inviata: '✍️ Firma digitale',
+  listino_foto: '📷 Listino da foto',
+  listino_vocale: '🎙️ Listino vocale',
+  listino_testo_ai: '🤖 Listino testo AI',
+  servizio_manuale_aggiunto: '➕ Servizio manuale',
+  abbonamento_creato: '📅 Piano pagamento',
+  pagamento_registrato: '💰 Pagamento registrato',
+  metodo_pagamento_selezionato: '💳 Metodo pagamento',
+  pdf_generato: '📄 PDF generato',
+  chat_messaggio: '💬 Chat AI',
+  stripe_link_creato: '🔗 Link Stripe pagamento',
+  schermata_aperta: '👁️ Visualizzazioni schermata',
+  cliente_creato: '👤 Cliente creato',
+  prodotto_venduto: '🛍️ Prodotto venduto',
+}
+
+const SCHERMATE_MOBILE = new Set([
+  'home',
+  'storico',
+  'clienti',
+  'builder',
+  'preventivo_pdf',
+  'cliente_dettaglio',
+  'listino',
+  'fiscale',
+  'pagamenti',
+])
+
+const SCHERMATE_DESKTOP = new Set([
+  'home',
+  'storico',
+  'clienti',
+  'cliente_dettaglio',
+  'listino',
+  'fiscale',
+  'pagamenti',
+  'nuovo',
+])
+
+function filtraEventiPerPiattaforma(
+  eventi: EventoRaw[],
+  piattaforma: FiltroPiattaforma
+): EventoRaw[] {
+  if (piattaforma === 'tutte') return eventi
+  const schermate =
+    piattaforma === 'mobile' ? SCHERMATE_MOBILE : SCHERMATE_DESKTOP
+  return eventi.filter((e) => e.schermata != null && schermate.has(e.schermata))
+}
+
+function calcolaEventiFrequenti(eventi: EventoRaw[]): EventoFrequente[] {
+  const conteggioEventi: Record<string, number> = {}
+  const schermatePerEvento: Record<string, Record<string, number>> = {}
+
+  eventi.forEach((e) => {
+    conteggioEventi[e.evento] = (conteggioEventi[e.evento] || 0) + 1
+    if (e.schermata) {
+      if (!schermatePerEvento[e.evento]) schermatePerEvento[e.evento] = {}
+      schermatePerEvento[e.evento][e.schermata] =
+        (schermatePerEvento[e.evento][e.schermata] || 0) + 1
+    }
+  })
+
+  return Object.entries(conteggioEventi)
+    .map(([evento, count]) => {
+      const schermate = schermatePerEvento[evento]
+      const schermata =
+        schermate &&
+        Object.entries(schermate).sort((a, b) => b[1] - a[1])[0]?.[0]
+      return { evento, count, schermata: schermata ?? null }
+    })
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10)
+}
+
+function calcolaFeatureAdoption(
+  eventi: EventoRaw[],
+  totaleUtenti: number
+): FeatureAdoption[] {
+  const adoption: Record<string, Set<string>> = {}
+  eventi.forEach((r) => {
+    if (!adoption[r.evento]) adoption[r.evento] = new Set()
+    adoption[r.evento].add(r.user_id)
+  })
+  return Object.entries(adoption)
+    .map(([evento, users]) => ({
+      evento,
+      utenti_unici: users.size,
+      pct: totaleUtenti > 0 ? Math.round((users.size / totaleUtenti) * 100) : 0,
+    }))
+    .sort((a, b) => b.utenti_unici - a.utenti_unici)
+}
+
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [accesso, setAccesso] = useState(false)
   const [stato, setStato] = useState<StatoGenerale | null>(null)
-  const [eventiFrequenti, setEventiFrequenti] = useState<EventoFrequente[]>([])
+  const [eventiCompleti, setEventiCompleti] = useState<EventoRaw[]>([])
+  const [filtroPiattaforma, setFiltroPiattaforma] =
+    useState<FiltroPiattaforma>('tutte')
   const [usaggioEndpoint, setUsaggioEndpoint] = useState<UsaggioEndpoint[]>([])
   const [utentiAttivi, setUtentiAttivi] = useState<UtenteAttivo[]>([])
-  const [featureAdoption, setFeatureAdoption] = useState<FeatureAdoption[]>([])
   const [venditeSommario, setVenditeSommario] = useState<VenditeSommario | null>(null)
   const [venditeProdotti, setVenditeProdotti] = useState<VenditaProdottoRiga[]>([])
   const [utenteEspanso, setUtenteEspanso] = useState<string | null>(null)
   const [dettaglioUtente, setDettaglioUtente] = useState<DettaglioUtente | null>(null)
   const [dettaglioLoading, setDettaglioLoading] = useState(false)
   const [periodoGiorni, setPeriodoGiorni] = useState(7)
+
+  const eventiFiltrati = useMemo(
+    () => filtraEventiPerPiattaforma(eventiCompleti, filtroPiattaforma),
+    [eventiCompleti, filtroPiattaforma]
+  )
+  const eventiFrequenti = useMemo(
+    () => calcolaEventiFrequenti(eventiFiltrati),
+    [eventiFiltrati]
+  )
+  const featureAdoption = useMemo(
+    () => calcolaFeatureAdoption(eventiFiltrati, stato?.totale_utenti ?? 0),
+    [eventiFiltrati, stato?.totale_utenti]
+  )
 
   useEffect(() => { checkAdmin() }, [])
   useEffect(() => {
@@ -217,7 +333,6 @@ export default function AdminDashboard() {
       { data: aiUsageOggi },
       { data: eventiRaw },
       { data: sessioniRaw },
-      { data: adoptionRaw },
       { data: vendite },
     ] = await Promise.all([
       supabase.from('profiles').select('*', { count: 'exact', head: true }),
@@ -226,9 +341,8 @@ export default function AdminDashboard() {
       supabase.from('eventi').select('id').eq('evento', 'pdf_generato').gte('created_at', new Date().toISOString().split('T')[0]),
       supabase.from('ai_usage').select('token_input, token_output, costo_euro, endpoint, latenza_ms').gte('created_at', dataInizioStr),
       supabase.from('ai_usage').select('costo_euro').gte('created_at', new Date().toISOString().split('T')[0]),
-      supabase.from('eventi').select('evento').gte('created_at', dataInizioStr),
+      supabase.from('eventi').select('evento, schermata, user_id').gte('created_at', dataInizioStr),
       supabase.from('sessioni').select('user_id, ultimo_accesso, numero_sessioni').order('ultimo_accesso', { ascending: false }).limit(20),
-      supabase.from('eventi').select('evento, user_id').gte('created_at', dataInizioStr),
       supabase
         .from('acquisti_prodotti')
         .select('prodotto_id, prodotti_digitali(titolo, prezzo, user_id), created_at')
@@ -253,26 +367,7 @@ export default function AdminDashboard() {
       costo_oggi_euro: costoOggi,
     })
 
-    // Eventi frequenti
-    const conteggioEventi: Record<string, number> = {}
-    eventiRaw?.forEach(e => { conteggioEventi[e.evento] = (conteggioEventi[e.evento] || 0) + 1 })
-    setEventiFrequenti(Object.entries(conteggioEventi).map(([evento, count]) => ({ evento, count })).sort((a, b) => b.count - a.count).slice(0, 10))
-
-    // Feature adoption
-    const adoption: Record<string, Set<string>> = {}
-    adoptionRaw?.forEach(r => {
-      if (!adoption[r.evento]) adoption[r.evento] = new Set()
-      adoption[r.evento].add(r.user_id)
-    })
-    setFeatureAdoption(
-      Object.entries(adoption)
-        .map(([evento, users]) => ({
-          evento,
-          utenti_unici: users.size,
-          pct: totaleUtentiNum > 0 ? Math.round((users.size / totaleUtentiNum) * 100) : 0,
-        }))
-        .sort((a, b) => b.utenti_unici - a.utenti_unici),
-    )
+    setEventiCompleti((eventiRaw ?? []) as EventoRaw[])
 
     // Vendite prodotti digitali
     const venditePerProdotto: Record<string, { titolo: string; creatorId: string; vendite: number; incassato: number }> = {}
@@ -468,22 +563,45 @@ export default function AdminDashboard() {
           <div>
             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Funzioni più usate</h2>
             <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-              <div className="divide-y divide-gray-50">
-                {eventiFrequenti.map((e, i) => {
-                  const max = eventiFrequenti[0].count
-                  const pct = Math.round((e.count / max) * 100)
-                  return (
-                    <div key={e.evento} className="px-4 py-3 flex items-center gap-4">
-                      <span className="text-xs text-gray-400 w-4">{i + 1}</span>
-                      <span className="text-sm font-mono text-[#0D1B2A] w-48 flex-shrink-0">{e.evento}</span>
-                      <div className="flex-1 bg-gray-100 rounded-full h-2">
-                        <div className="bg-[#0E9F8E] h-2 rounded-full" style={{ width: `${pct}%` }} />
-                      </div>
-                      <span className="text-sm font-semibold text-gray-700 w-12 text-right">{e.count}</span>
-                    </div>
-                  )
-                })}
-              </div>
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-100">
+                  <tr>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 w-8">#</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Funzione</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Piattaforma</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Utilizzo</th>
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500">Count</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {eventiFrequenti.map((e, i) => {
+                    const max = eventiFrequenti[0].count
+                    const pct = Math.round((e.count / max) * 100)
+                    return (
+                      <tr key={e.evento} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-xs text-gray-400">{i + 1}</td>
+                        <td className="px-4 py-3 text-sm text-[#0D1B2A]">
+                          {NOMI_EVENTI[e.evento] ?? e.evento}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-500 font-mono">
+                          {e.schermata ?? '—'}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="bg-gray-100 rounded-full h-2 min-w-[80px]">
+                            <div
+                              className="bg-[#0E9F8E] h-2 rounded-full"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-right text-sm font-semibold text-gray-700">
+                          {e.count}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
@@ -504,7 +622,9 @@ export default function AdminDashboard() {
                 <tbody className="divide-y divide-gray-50">
                   {featureAdoption.map((f) => (
                     <tr key={f.evento} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-mono text-xs text-[#0D1B2A]">{f.evento}</td>
+                      <td className="px-4 py-3 text-sm text-[#0D1B2A]">
+                        {NOMI_EVENTI[f.evento] ?? f.evento}
+                      </td>
                       <td className="px-4 py-3 text-right text-gray-700">{f.utenti_unici}</td>
                       <td className="px-4 py-3 text-right text-[#0E9F8E] font-medium">{f.pct}%</td>
                     </tr>
@@ -565,7 +685,22 @@ export default function AdminDashboard() {
         {/* Utenti attivi */}
         {utentiAttivi.length > 0 && (
           <div>
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Utenti attivi</h2>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
+                Utenti attivi
+              </h2>
+              <select
+                value={filtroPiattaforma}
+                onChange={(e) =>
+                  setFiltroPiattaforma(e.target.value as FiltroPiattaforma)
+                }
+                className="text-xs bg-white text-[#0D1B2A] border border-gray-200 rounded-lg px-3 py-1.5 shadow-sm"
+              >
+                <option value="tutte">Tutte le piattaforme</option>
+                <option value="mobile">Mobile</option>
+                <option value="desktop">Desktop</option>
+              </select>
+            </div>
             <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 border-b border-gray-100">
