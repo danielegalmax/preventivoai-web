@@ -52,22 +52,77 @@ async function confermaAcquisto(
 
 function buildDownloadEmailHtml(titolo: string, linkDownload: string): string {
   const url = normalizeDownloadUrl(linkDownload)
+  const titoloSafe = titolo
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+
   return `
-    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; color: #1a1a2e;">
-      <h1 style="font-size: 22px; margin-bottom: 16px;">Grazie per il tuo acquisto!</h1>
-      <p style="font-size: 15px; line-height: 1.6; margin-bottom: 24px;">
-        Il tuo prodotto <strong>${titolo}</strong> è pronto per il download.
-      </p>
-      <p style="margin-bottom: 32px;">
-        <a href="${url}" style="display: inline-block; background: #0E9F8E; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600;">
-          Scarica ora
-        </a>
-      </p>
-      <p style="font-size: 12px; color: #888; border-top: 1px solid #eee; padding-top: 16px;">
-        Questo link ti è stato inviato dopo il pagamento. Conservalo.
-      </p>
-    </div>
-  `
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pagamento completato</title>
+</head>
+<body style="margin:0;padding:0;background-color:#F7F8FA;font-family:Arial,Helvetica,sans-serif;-webkit-font-smoothing:antialiased;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F7F8FA;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(13,27,42,0.08);">
+          <tr>
+            <td style="background-color:#0D1B2A;padding:24px;text-align:center;border-radius:12px 12px 0 0;">
+              <span style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">
+                Preventivo<span style="color:#2DD4BF;">AI</span>
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px 40px 32px;text-align:center;">
+              <p style="margin:0 0 20px;font-size:40px;line-height:1;">✅</p>
+              <h1 style="margin:0 0 16px;font-size:24px;font-weight:700;color:#0D1B2A;line-height:1.3;">
+                Pagamento completato!
+              </h1>
+              <p style="margin:0 0 32px;font-size:16px;line-height:1.6;color:#4B5563;">
+                Il tuo prodotto <strong style="color:#0D1B2A;">${titoloSafe}</strong> è pronto.
+              </p>
+              <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 20px;">
+                <tr>
+                  <td style="border-radius:8px;background-color:#0E9F8E;">
+                    <a href="${url}" target="_blank" style="display:inline-block;padding:14px 32px;font-size:16px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">
+                      Scarica il prodotto
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:0;font-size:13px;line-height:1.5;color:#9CA3AF;">
+                Salva questo link, potrai usarlo in qualsiasi momento.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 40px 32px;">
+              <hr style="border:none;border-top:1px solid #E5E7EB;margin:0;" />
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 40px 36px;text-align:center;">
+              <p style="margin:0 0 8px;font-size:12px;line-height:1.6;color:#999999;">
+                Email inviata da PreventivoAI · Questo acquisto è protetto da Stripe
+              </p>
+              <p style="margin:0;font-size:11px;font-weight:600;letter-spacing:0.5px;color:#635BFF;">
+                stripe
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim()
 }
 
 async function inviaEmailDownload(
