@@ -44,6 +44,8 @@ export async function proxy(request: NextRequest) {
   return supabaseResponse
 }
 
+export { proxy as middleware }
+
 export const config = {
   matcher: ['/dashboard/:path*', '/benvenuto', '/scarica'],
 }
