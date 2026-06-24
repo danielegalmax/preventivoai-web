@@ -87,22 +87,28 @@ export function statoBadge(p: PreventivoRow): {
   label: string
   className: string
 } {
-  if (p.pagato || p.stato === 'pagato') {
-    return {
-      label: 'pagato',
-      className: 'bg-[#E1F5EE] text-[#085041]',
+  const s = p.stato || 'bozza'
+
+  if (s === 'accettato') {
+    if (p.pagato) {
+      return { label: 'pagato', className: 'bg-[#E1F5EE] text-[#085041]' }
     }
+    return { label: 'da incassare', className: 'bg-[#FEF3C7] text-[#92400E]' }
   }
-  if (p.stato === 'bozza') {
+  if (s === 'inviato') {
+    return { label: 'inviato', className: 'bg-[#E6F1FB] text-[#0C447C]' }
+  }
+  if (s === 'rifiutato') {
+    return { label: 'rifiutato', className: 'bg-red-100 text-gray-600' }
+  }
+  if (s === 'bozza') {
     return { label: 'bozza', className: 'bg-gray-100 text-gray-600' }
   }
-  if (p.stato === 'accettato') {
-    return { label: 'accettato', className: 'bg-[#E6F1FB] text-[#0C447C]' }
+  // pagato=true su stati diversi da accettato (es. pagamento Stripe su bozza)
+  if (p.pagato) {
+    return { label: 'pagato', className: 'bg-[#E1F5EE] text-[#085041]' }
   }
-  return {
-    label: 'da incassare',
-    className: 'bg-[#FEF3C7] text-[#92400E]',
-  }
+  return { label: s, className: 'bg-gray-100 text-gray-600' }
 }
 
 type Props = {
