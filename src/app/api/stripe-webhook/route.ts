@@ -2,6 +2,37 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
+async function mandaPushNotificaProdotto(
+  supabaseAdmin: SupabaseClient,
+  userId: string,
+  titolo: string,
+  messaggio: string
+): Promise<void> {
+  try {
+    const { data: profilo } = await supabaseAdmin
+      .from('profiles')
+      .select('expo_push_token')
+      .eq('id', userId)
+      .single()
+
+    const token = profilo?.expo_push_token
+    if (!token || !token.startsWith('ExponentPushToken[')) return
+
+    await fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: token,
+        title: titolo,
+        body: messaggio,
+        sound: 'default',
+      }),
+    })
+  } catch {
+    // push non critica, ignora errori
+  }
+}
+
 function normalizeDownloadUrl(link: string): string {  return link.startsWith('http') ? link : `https://${link}`
 }
 
@@ -237,6 +268,13 @@ export async function POST(req: NextRequest) {
                     notificaError
                   )
                 }
+
+                await mandaPushNotificaProdotto(
+                  supabaseAdmin,
+                  prodottoCompleto.user_id,
+                  'Prodotto venduto!',
+                  `Hai ricevuto un pagamento per "${risultato.titolo}" da ${risultato.email_cliente}`
+                )
               }
             } catch (err) {
               console.error('webhook notifica prodotto venduto error:', err)
