@@ -26,6 +26,20 @@ const PREVENTIVI_SELECT = `
   preventivo_invii ( link_token, revocato_at, scade_at, inviato_at )
 `
 
+async function fetchIncassatoTotale(accessToken: string): Promise<number> {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/home-stats`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    )
+    if (!res.ok) return 0
+    const data = await res.json()
+    return data.incassatoTotale ?? 0
+  } catch {
+    return 0
+  }
+}
+
 export default function Dashboard() {
   const [nomeAzienda, setNomeAzienda] = useState('')
   const [isAdmin, setIsAdmin] = useState(false)
@@ -62,14 +76,11 @@ export default function Dashboard() {
       .eq('user_id', user.id)
     setTotalePreventivi(countPreventivi ?? 0)
 
-    const { data: pagati } = await supabase
-      .from('preventivi')
-      .select('importo_totale')
-      .eq('user_id', user.id)
-      .eq('pagato', true)
-    setIncassatoTotale(
-      pagati?.reduce((acc, r) => acc + (r.importo_totale || 0), 0) ?? 0
-    )
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session?.access_token) {
+      const incassato = await fetchIncassatoTotale(session.access_token)
+      setIncassatoTotale(incassato)
+    }
 
     const { data: prevs } = await supabase
       .from('preventivi')
