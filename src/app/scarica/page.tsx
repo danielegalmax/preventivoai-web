@@ -6,9 +6,11 @@ import { supabase } from '@/lib/supabase'
 import { DashboardLayout } from '@/components/DashboardLayout'
 
 const APK_URL =
-  'https://github.com/danielegalmax/preventivoai-mobile/releases/download/v0.1.0-beta/preventivoai-android-v0.1.0-beta.apk'
+  'https://github.com/danielegalmax/preventivoai-mobile/releases/download/v1.0.0-beta/preventivoai-android-v1.0.0-beta.apk'
 const WINDOWS_INSTALLER_URL =
-  'https://github.com/danielegalmax/preventivoai-desktop/releases/download/v0.1.0-beta/preventivoai-desktop_0.1.0_x64-setup.exe'
+  'https://github.com/danielegalmax/preventivoai-desktop/releases/download/v1.0.0-beta/preventivoai-desktop_1.0.0_x64-setup.exe'
+const VERSIONE_ANDROID = '1.0.0'
+const VERSIONE_WINDOWS = '1.0.0'
 
 function AndroidIcon() {
   return (
@@ -80,7 +82,10 @@ export default function ScaricaPage() {
           <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col">
             <div className="flex items-center gap-3 mb-4">
               <AndroidIcon />
-              <h2 className="text-lg font-semibold text-[#0D1B2A]">App Android</h2>
+              <div>
+                <h2 className="text-lg font-semibold text-[#0D1B2A]">App Android</h2>
+                <span className="text-xs text-gray-400 font-normal">v{VERSIONE_ANDROID}</span>
+              </div>
             </div>
             <p className="text-sm text-gray-500 flex-1 mb-5">
               Scarica l&apos;APK e installa PreventivoAI sul tuo smartphone Android.
@@ -97,7 +102,10 @@ export default function ScaricaPage() {
           <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col">
             <div className="flex items-center gap-3 mb-4">
               <WindowsIcon />
-              <h2 className="text-lg font-semibold text-[#0D1B2A]">App Windows</h2>
+              <div>
+                <h2 className="text-lg font-semibold text-[#0D1B2A]">App Windows</h2>
+                <span className="text-xs text-gray-400 font-normal">v{VERSIONE_WINDOWS}</span>
+              </div>
             </div>
             <p className="text-sm text-gray-500 flex-1 mb-5">
               Scarica l&apos;installer per usare PreventivoAI sul tuo PC Windows.
