@@ -197,26 +197,21 @@ export async function POST(req: NextRequest) {
     let event: Stripe.Event
 
     if (!webhookSecret) {
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('STRIPE_WEBHOOK_SECRET non configurato — development mode')
-        event = JSON.parse(body) as Stripe.Event
-      } else {
-        return NextResponse.json({ error: 'Webhook non configurato' }, { status: 500 })
-      }
-    } else {
-      const signature = req.headers.get('stripe-signature')
+      return NextResponse.json({ error: 'Webhook non configurato' }, { status: 500 })
+    }
 
-      if (!signature) {
-        console.error('webhook error: firma mancante')
-        return NextResponse.json({ error: 'Firma mancante' }, { status: 400 })
-      }
+    const signature = req.headers.get('stripe-signature')
 
-      try {
-        event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
-      } catch (err) {
-        console.error('webhook signature error:', err)
-        return NextResponse.json({ error: 'Firma non valida' }, { status: 400 })
-      }
+    if (!signature) {
+      console.error('webhook error: firma mancante')
+      return NextResponse.json({ error: 'Firma mancante' }, { status: 400 })
+    }
+
+    try {
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
+    } catch (err) {
+      console.error('webhook signature error:', err)
+      return NextResponse.json({ error: 'Firma non valida' }, { status: 400 })
     }
 
     if (event.type === 'checkout.session.completed') {
