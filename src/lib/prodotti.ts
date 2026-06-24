@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 export interface ProdottoDigitale {
   id: string
@@ -81,9 +82,11 @@ export function preparaLinkPreviewPerSalvataggio(urls: string[]): {
 }
 
 export async function getStripeAccountArtigiano(
-  userId: string
+  userId: string,
+  client?: SupabaseClient
 ): Promise<string | null> {
-  const { data } = await supabase
+  const db = client ?? supabase
+  const { data } = await db
     .from('profiles')
     .select('stripe_account_id, stripe_charges_enabled')
     .eq('id', userId)
@@ -118,9 +121,11 @@ export async function getProdottiUtente(
 }
 
 export async function getProdottoBySlug(
-  slug: string
+  slug: string,
+  client?: SupabaseClient
 ): Promise<ProdottoPubblico | null> {
-  const { data, error } = await supabase
+  const db = client ?? supabase
+  const { data, error } = await db
     .from('prodotti_digitali')
     .select(CAMPI_PUBBLICI)
     .eq('slug', slug)

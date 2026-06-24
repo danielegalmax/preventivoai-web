@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const prodotto = await getProdottoBySlug(slug)
+    const prodotto = await getProdottoBySlug(slug, supabaseAdmin)
     if (!prodotto || !prodotto.attivo) {
       return NextResponse.json(
         { error: 'Prodotto non trovato o non disponibile' },
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     const origin = baseUrl(req)
     const unitAmount = Math.round(prodotto.prezzo * 100)
     const applicationFeeAmount = Math.round(unitAmount * 0.005)
-    const stripeAccountId = await getStripeAccountArtigiano(prodotto.user_id)
+    const stripeAccountId = await getStripeAccountArtigiano(prodotto.user_id, supabaseAdmin)
 
     const sessionBase: Stripe.Checkout.SessionCreateParams = {
       mode: 'payment',
