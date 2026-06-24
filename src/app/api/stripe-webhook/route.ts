@@ -182,6 +182,36 @@ async function inviaEmailDownload(
   }
 }
 
+async function inviaEmailProdottoVenduto(
+  resend: any,
+  emailArtigiano: string,
+  nomeArtigiano: string,
+  titoloProdotto: string,
+  emailAcquirente: string,
+  importo: number
+): Promise<void> {
+  if (!resend) return
+  try {
+    await resend.emails.send({
+      from: 'PreventivoAI <onboarding@resend.dev>',
+      to: emailArtigiano,
+      subject: `Prodotto venduto — ${titoloProdotto}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 16px">
+          <h2 style="color:#0D1B2A">Prodotto venduto 🎉</h2>
+          <p>Ciao${nomeArtigiano ? ` ${nomeArtigiano}` : ''},</p>
+          <p>Hai venduto <strong>${titoloProdotto}</strong> a <strong>${emailAcquirente}</strong> per <strong>€${(importo / 100).toFixed(2).replace('.', ',')}</strong>.</p>
+          <p>Il pagamento è stato ricevuto correttamente.</p>
+          <hr style="border:none;border-top:1px solid #eee;margin:24px 0"/>
+          <p style="font-size:12px;color:#888">PreventivoAI — Solvex</p>
+        </div>
+      `
+    })
+  } catch (err) {
+    console.error('[email] inviaEmailProdottoVenduto:', err)
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
@@ -241,6 +271,30 @@ export async function POST(req: NextRequest) {
                 .single()
 
               if (prodottoCompleto) {
+                // Email artigiano — prodotto venduto
+                try {
+                  const { data: profilo } = await supabaseAdmin
+                    .from('profiles')
+                    .select('nome_azienda')
+                    .eq('id', prodottoCompleto.user_id)
+                    .maybeSingle()
+
+                  const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(prodottoCompleto.user_id)
+                  const emailArtigiano = authUser?.user?.email
+                  if (emailArtigiano) {
+                    await inviaEmailProdottoVenduto(
+                      resend,
+                      emailArtigiano,
+                      profilo?.nome_azienda || '',
+                      risultato.titolo,
+                      risultato.email_cliente,
+                      session.amount_total ?? 0
+                    )
+                  }
+                } catch (emailErr) {
+                  console.error('[stripe webhook] errore email artigiano prodotto:', emailErr)
+                }
+
                 const { error: notificaError } = await supabaseAdmin
                   .from('notifiche')
                   .insert({
