@@ -109,6 +109,8 @@ const STATS = [
   { id: "stat-3", value: "100%", label: "gratis in beta" },
 ] as const;
 
+const BETA_TESTER_URL = "https://earnest-nougat-b08159.netlify.app/";
+
 export function LandingPage() {
   const rootRef = useRef<HTMLDivElement>(null);
   const [revealed, setRevealed] = useState<ReadonlySet<string>>(() => new Set());
@@ -173,12 +175,12 @@ export function LandingPage() {
               lo fai firmare online e incassi con Stripe. Tutto da telefono, tablet o browser.
             </p>
             <div className={styles.heroActions}>
-              <Link className={styles.btnPrimary} href="/login">
-                Accedi
+              <a className={styles.btnPrimary} href={BETA_TESTER_URL} target="_blank" rel="noopener noreferrer">
+                Diventa beta tester
                 <svg viewBox="0 0 20 20" fill="none" aria-hidden>
                   <path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-              </Link>
+              </a>
               <p className={styles.heroFinePrint}>Nessun costo in beta · accesso su invito</p>
             </div>
           </div>
@@ -475,15 +477,15 @@ export function LandingPage() {
         >
           <h2>Pronto a usarla?</h2>
           <p>
-            Accedi con le tue credenziali e gestisci preventivi, firme e pagamenti
-            da browser, tablet o telefono.
+            Candidati come beta tester: compila il form e ti risponderemo entro 48 ore
+            per provare preventivi, firme e pagamenti da browser, tablet o telefono.
           </p>
-          <Link className={styles.btnPrimary} href="/login">
-            Accedi
+          <a className={styles.btnPrimary} href={BETA_TESTER_URL} target="_blank" rel="noopener noreferrer">
+            Diventa beta tester
             <svg viewBox="0 0 20 20" fill="none" aria-hidden>
               <path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-          </Link>
+          </a>
           <p className={styles.ctaNote}>Nessun costo durante la beta · accesso su invito</p>
         </div>
       </section>
