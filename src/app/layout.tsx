@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PreventivoAI — Beta aperta",
+  title: "PreviCloud — Beta aperta",
   description:
     "Preventivi professionali con AI, firma digitale, pagamento Stripe e notifiche. Richiedi l'accesso gratuito alla beta.",
 };

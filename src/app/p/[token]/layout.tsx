@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Firma preventivo | PreventivoAI",
+  title: "Firma preventivo | PreviCloud",
   description: "Accetta e firma il preventivo online in modo sicuro.",
   robots: { index: false, follow: false },
 };

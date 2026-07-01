@@ -115,7 +115,7 @@ export default function NuovoPreventivo() {
           <ArrowLeft size={20} />
         </button>
         <h1 className="text-base font-semibold text-white tracking-tight">
-          Preventivo<span className="text-[#2DD4BF]">AI</span>
+          Previ<span className="text-[#2DD4BF]">Cloud</span>
           <span className="text-gray-400 font-normal ml-2">— Nuovo preventivo</span>
         </h1>
       </header>
@@ -180,7 +180,7 @@ export default function NuovoPreventivo() {
               {messaggi.map((m, i) => (
                 <div key={i} className={`flex flex-col ${m.role === 'user' ? '' : 'items-end'}`}>
                   <div className="text-xs text-gray-400 mb-1 px-1">
-                    {m.role === 'user' ? 'Cliente' : 'PreventivoAI'}
+                    {m.role === 'user' ? 'Cliente' : 'PreviCloud'}
                   </div>
                   <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed max-w-[88%] whitespace-pre-wrap ${
                     m.role === 'user'
@@ -194,7 +194,7 @@ export default function NuovoPreventivo() {
 
               {loading && (
                 <div className="flex flex-col items-end">
-                  <div className="text-xs text-gray-400 mb-1 px-1">PreventivoAI</div>
+                  <div className="text-xs text-gray-400 mb-1 px-1">PreviCloud</div>
                   <div className="bg-white border border-gray-200 rounded-2xl rounded-br-sm px-4 py-3">
                     <Loader2 size={16} className="animate-spin text-[#0E9F8E]" />
                   </div>

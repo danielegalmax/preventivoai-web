@@ -20,7 +20,7 @@ export function FirmaBrandHeader({
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-3 py-3 sm:gap-4 sm:px-5 sm:py-4">
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-[#0E9F8E] sm:text-xs">
-            Preventivo<span className="text-[#0D1B2A]">AI</span>
+            Previ<span className="text-[#0D1B2A]">Cloud</span>
           </p>
           <h1 className="truncate text-base font-semibold text-[#0D1B2A] sm:text-xl lg:text-2xl">
             {titolo?.trim() || "Firma preventivo"}

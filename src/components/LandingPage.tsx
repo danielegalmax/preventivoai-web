@@ -145,7 +145,7 @@ export function LandingPage() {
     <div ref={rootRef} className={styles.page}>
       <header className={styles.navbar}>
         <div className={styles.logo}>
-          Preventivo<span>AI</span>
+          Previ<span>Cloud</span>
         </div>
         <Link className={styles.navCta} href="/login">
           Login
@@ -171,7 +171,7 @@ export function LandingPage() {
               <span className={styles.heroHighlight}>senza uscire dall&apos;app</span>
             </h1>
             <p className={styles.heroLead}>
-              PreventivoAI è il SaaS italiano per artigiani: crei il preventivo con l&apos;AI,
+              PreviCloud è il SaaS italiano per artigiani: crei il preventivo con l&apos;AI,
               lo fai firmare online e incassi con Stripe. Tutto da telefono, tablet o browser.
             </p>
             <div className={styles.heroActions}>
@@ -304,7 +304,7 @@ export function LandingPage() {
             >
               <div className={styles.chatHeader}>
                 <span className={styles.chatDot} />
-                Assistente PreventivoAI
+                Assistente PreviCloud
               </div>
               <div className={cx("chatMsg", "chatUser")}>
                 Preventivo per rifacimento bagno: demolizione, nuove tubazioni, sanitari. Budget
@@ -338,7 +338,7 @@ export function LandingPage() {
               <div className={styles.signPhone}>
                 <div className={styles.signScreen}>
                   <div className={styles.signBrand}>
-                    Preventivo<span>AI</span>
+                    Previ<span>Cloud</span>
                     <em>PRV-2026-0184</em>
                   </div>
                   <h4>Rifacimento bagno — Mario Rossi</h4>
@@ -493,13 +493,13 @@ export function LandingPage() {
       <footer className={styles.footer}>
         <div className={styles.footerInner}>
           <div className={styles.footerLogo}>
-            Preventivo<span>AI</span>
+            Previ<span>Cloud</span>
           </div>
           <nav className={styles.footerNav} aria-label="Link legali">
             <Link href="/termini">Termini</Link>
             <Link href="/privacy">Privacy</Link>
           </nav>
-          <p className={styles.footerCopy}>© {new Date().getFullYear()} PreventivoAI</p>
+          <p className={styles.footerCopy}>© {new Date().getFullYear()} PreviCloud</p>
         </div>
       </footer>
       </main>

@@ -178,7 +178,7 @@ export default function StorePage() {
 
       <footer className="pb-8 text-center">
         <p className="text-sm text-white/50">
-          Preventivo<span className="text-[#2DD4BF]">AI</span>
+          Previ<span className="text-[#2DD4BF]">Cloud</span>
         </p>
       </footer>
     </div>

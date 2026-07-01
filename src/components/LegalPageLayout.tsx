@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 function BrandLogo({ className = '' }: { className?: string }) {
   return (
     <Link href="/" className={`font-semibold tracking-tight text-[#0D1B2A] hover:opacity-90 ${className}`}>
-      Preventivo<span className="text-[#0E9F8E]">AI</span>
+      Previ<span className="text-[#0E9F8E]">Cloud</span>
     </Link>
   )
 }

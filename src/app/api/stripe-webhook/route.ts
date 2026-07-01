@@ -109,7 +109,7 @@ function buildDownloadEmailHtml(titolo: string, linkDownload: string): string {
           <tr>
             <td style="background-color:#0D1B2A;padding:24px;text-align:center;border-radius:12px 12px 0 0;">
               <span style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">
-                Preventivo<span style="color:#2DD4BF;">AI</span>
+                Previ<span style="color:#2DD4BF;">Cloud</span>
               </span>
             </td>
           </tr>
@@ -144,7 +144,7 @@ function buildDownloadEmailHtml(titolo: string, linkDownload: string): string {
           <tr>
             <td style="padding:0 40px 36px;text-align:center;">
               <p style="margin:0 0 8px;font-size:12px;line-height:1.6;color:#999999;">
-                Email inviata da PreventivoAI · Questo acquisto è protetto da Stripe
+                Email inviata da PreviCloud · Questo acquisto è protetto da Stripe
               </p>
               <p style="margin:0;font-size:11px;font-weight:600;letter-spacing:0.5px;color:#635BFF;">
                 stripe
@@ -171,7 +171,7 @@ async function inviaEmailDownload(
   }
 
   const { error } = await resend.emails.send({
-    from: 'PreventivoAI <onboarding@resend.dev>',
+    from: 'PreviCloud <onboarding@resend.dev>',
     to: emailCliente,
     subject: `Il tuo acquisto è pronto — ${titolo}`,
     html: buildDownloadEmailHtml(titolo, linkDownload),
@@ -193,7 +193,7 @@ async function inviaEmailProdottoVenduto(
   if (!resend) return
   try {
     await resend.emails.send({
-      from: 'PreventivoAI <onboarding@resend.dev>',
+      from: 'PreviCloud <onboarding@resend.dev>',
       to: emailArtigiano,
       subject: `Prodotto venduto — ${titoloProdotto}`,
       html: `
@@ -203,7 +203,7 @@ async function inviaEmailProdottoVenduto(
           <p>Hai venduto <strong>${titoloProdotto}</strong> a <strong>${emailAcquirente}</strong> per <strong>€${(importo / 100).toFixed(2).replace('.', ',')}</strong>.</p>
           <p>Il pagamento è stato ricevuto correttamente.</p>
           <hr style="border:none;border-top:1px solid #eee;margin:24px 0"/>
-          <p style="font-size:12px;color:#888">PreventivoAI — Solvex</p>
+          <p style="font-size:12px;color:#888">PreviCloud — Solvex</p>
         </div>
       `
     })

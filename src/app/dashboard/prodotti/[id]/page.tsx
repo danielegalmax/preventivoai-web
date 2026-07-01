@@ -136,7 +136,7 @@ export default function ModificaProdottoPage() {
           <ArrowLeft size={20} />
         </button>
         <h1 className="text-base font-semibold text-white tracking-tight">
-          Preventivo<span className="text-[#2DD4BF]">AI</span>
+          Previ<span className="text-[#2DD4BF]">Cloud</span>
           <span className="text-gray-400 font-normal ml-2">— Modifica prodotto</span>
         </h1>
       </header>

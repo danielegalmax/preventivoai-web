@@ -479,7 +479,7 @@ export default function AdminDashboard() {
       <header className="bg-[#0D1B2A] px-6 py-4 flex items-center justify-between">
         <div>
           <h1 className="text-lg font-semibold text-white">Admin Dashboard</h1>
-          <p className="text-xs text-gray-400">PreventivoAI — solo tu vedi questa pagina</p>
+          <p className="text-xs text-gray-400">PreviCloud — solo tu vedi questa pagina</p>
         </div>
         <div className="flex items-center gap-3">
           <select

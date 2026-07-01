@@ -136,7 +136,7 @@ export default function Dashboard() {
           Buon {salutoOrario()}, {nomeDisplay}! 👋
         </h1>
         <p className="text-sm text-gray-500 mt-2">
-          Panoramica della tua attività su PreventivoAI
+          Panoramica della tua attività su PreviCloud
         </p>
       </div>
 

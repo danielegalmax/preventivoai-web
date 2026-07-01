@@ -5,13 +5,13 @@ export default function TerminiPage() {
     <LegalPageLayout title="Termini di servizio">
       <LegalSection title="1. Oggetto del servizio">
         <p>
-          PreventivoAI è uno strumento software per la creazione e la gestione di preventivi digitali,
+          PreviCloud è uno strumento software per la creazione e la gestione di preventivi digitali,
           la firma online dei documenti e il tracciamento degli incassi. Il servizio è erogato dal
           titolare della piattaforma (di seguito, il «Titolare»), i cui estremi identificativi e
           recapiti sono disponibili sul sito web del servizio.
         </p>
         <p>
-          L&apos;utilizzo di PreventivoAI implica l&apos;accettazione integrale dei presenti Termini di servizio.
+          L&apos;utilizzo di PreviCloud implica l&apos;accettazione integrale dei presenti Termini di servizio.
         </p>
       </LegalSection>
 
@@ -68,7 +68,7 @@ export default function TerminiPage() {
 
       <LegalSection title="6. Uso consentito">
         <p>
-          È consentito utilizzare PreventivoAI esclusivamente per finalità professionali legittime
+          È consentito utilizzare PreviCloud esclusivamente per finalità professionali legittime
           connesse alla gestione di preventivi e rapporti con i propri clienti.
         </p>
         <p>
@@ -85,7 +85,7 @@ export default function TerminiPage() {
       <LegalSection title="7. Proprietà intellettuale">
         <p>
           Il software, l&apos;interfaccia, la documentazione, i testi, le grafiche e gli altri elementi
-          del servizio — inclusa, ove applicabile, la denominazione «PreventivoAI» — sono protetti dalle
+          del servizio — inclusa, ove applicabile, la denominazione «PreviCloud» — sono protetti dalle
           norme vigenti in materia di proprietà intellettuale e restano di titolarità del Titolare o di
           terzi che ne abbiano concesso l&apos;utilizzo.
         </p>

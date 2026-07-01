@@ -90,7 +90,7 @@ export function FirmaPageShell({ children }: { children: ReactNode }) {
       <footer className="hidden shrink-0 border-t border-black/5 px-4 py-3 text-center text-xs text-[#9CA3AF] sm:block">
         Powered by{" "}
         <span className="font-semibold text-[#0D1B2A]">
-          Preventivo<span className="text-[#0E9F8E]">AI</span>
+          Previ<span className="text-[#0E9F8E]">Cloud</span>
         </span>
       </footer>
     </div>

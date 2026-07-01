@@ -72,7 +72,7 @@ export default function ScaricaPage() {
     <DashboardLayout nomeAzienda={nomeAzienda} activeRoute="/scarica">
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold text-[#0D1B2A]">Scarica PreventivoAI</h1>
+          <h1 className="text-2xl font-semibold text-[#0D1B2A]">Scarica PreviCloud</h1>
           <p className="text-sm text-gray-500 mt-1">
             Installa l&apos;app sul tuo dispositivo per lavorare ovunque.
           </p>
@@ -88,7 +88,7 @@ export default function ScaricaPage() {
               </div>
             </div>
             <p className="text-sm text-gray-500 flex-1 mb-5">
-              Scarica l&apos;APK e installa PreventivoAI sul tuo smartphone Android.
+              Scarica l&apos;APK e installa PreviCloud sul tuo smartphone Android.
             </p>
             <a
               href={APK_URL}
@@ -108,7 +108,7 @@ export default function ScaricaPage() {
               </div>
             </div>
             <p className="text-sm text-gray-500 flex-1 mb-5">
-              Scarica l&apos;installer per usare PreventivoAI sul tuo PC Windows.
+              Scarica l&apos;installer per usare PreviCloud sul tuo PC Windows.
             </p>
             <a
               href={WINDOWS_INSTALLER_URL}

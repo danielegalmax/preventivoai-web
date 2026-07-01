@@ -6,7 +6,7 @@ export default function PrivacyPage() {
       <LegalSection title="1. Titolare del trattamento">
         <p>
           Il titolare del trattamento dei dati personali è l&apos;entità che gestisce il servizio
-          PreventivoAI. Estremi identificativi, sede e recapiti per le richieste in materia di privacy
+          PreviCloud. Estremi identificativi, sede e recapiti per le richieste in materia di privacy
           sono pubblicati sul sito web del servizio o comunicati agli utenti nelle informative ufficiali.
         </p>
         <p>
@@ -18,7 +18,7 @@ export default function PrivacyPage() {
       <LegalSection title="2. Ambito di applicazione">
         <p>
           La presente informativa descrive come vengono trattati i dati personali degli utenti che
-          accedono a PreventivoAI tramite sito web, applicazione mobile e applicazione desktop,
+          accedono a PreviCloud tramite sito web, applicazione mobile e applicazione desktop,
           nonché i dati inseriti dagli utenti relativi ai propri clienti finali nell&apos;ambito
           dell&apos;utilizzo del servizio.
         </p>
@@ -46,7 +46,7 @@ export default function PrivacyPage() {
             dati analitici finalizzati al miglioramento del servizio.
           </li>
           <li>
-            <strong>Dati di pagamento:</strong> gestiti tramite Stripe; PreventivoAI non conserva i dati
+            <strong>Dati di pagamento:</strong> gestiti tramite Stripe; PreviCloud non conserva i dati
             completi delle carte di pagamento.
           </li>
         </ul>
@@ -55,7 +55,7 @@ export default function PrivacyPage() {
       <LegalSection title="4. Finalità e base giuridica">
         <p>I dati sono trattati per le seguenti finalità:</p>
         <ul className="list-disc space-y-2 pl-5">
-          <li>erogazione del servizio PreventivoAI e gestione dell&apos;account utente;</li>
+          <li>erogazione del servizio PreviCloud e gestione dell&apos;account utente;</li>
           <li>creazione, invio, firma e tracciamento dei preventivi;</li>
           <li>gestione di pagamenti, rate e abbonamenti collegati al servizio;</li>
           <li>assistenza tecnica e comunicazioni relative al servizio;</li>

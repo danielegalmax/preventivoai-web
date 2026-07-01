@@ -58,7 +58,7 @@ function LoginContent() {
 
       <div className="mb-8 text-center">
         <h1 className="text-2xl font-semibold text-[#0D1B2A] tracking-tight">
-          Preventivo<span className="text-[#0E9F8E]">AI</span>
+          Previ<span className="text-[#0E9F8E]">Cloud</span>
         </h1>
         <p className="text-sm text-gray-500 mt-1">
           {mode === 'register' && BETA_REGISTRAZIONE_APERTA ? 'Crea il tuo account gratuito' : 'Bentornato'}

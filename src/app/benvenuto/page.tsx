@@ -7,10 +7,10 @@ import { Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
 const TERMINI_PLACEHOLDER = `
-TERMINI E CONDIZIONI DI UTILIZZO — PreventivoAI
+TERMINI E CONDIZIONI DI UTILIZZO — PreviCloud
 
 1. Oggetto del servizio
-PreventivoAI fornisce strumenti digitali per la creazione, gestione e invio di preventivi
+PreviCloud fornisce strumenti digitali per la creazione, gestione e invio di preventivi
 destinati a professionisti e piccole imprese.
 
 2. Registrazione e account
@@ -22,11 +22,11 @@ custodia delle proprie credenziali di accesso.
 tentare di compromettere la sicurezza della piattaforma.
 
 4. Proprietà intellettuale
-Il software, il marchio e i contenuti della piattaforma restano di proprietà di PreventivoAI.
+Il software, il marchio e i contenuti della piattaforma restano di proprietà di PreviCloud.
 I contenuti inseriti dall'utente restano di proprietà dell'utente.
 
 5. Limitazione di responsabilità
-PreventivoAI non è responsabile per danni indiretti derivanti dall'uso del servizio, né per
+PreviCloud non è responsabile per danni indiretti derivanti dall'uso del servizio, né per
 errori nei preventivi generati o inviati dall'utente.
 
 6. Modifiche
@@ -116,14 +116,14 @@ export default function BenvenutoPage() {
     <div className="min-h-screen bg-[#F7F8FA] flex flex-col">
       <header className="bg-[#0D1B2A] px-6 py-4">
         <span className="text-lg font-semibold text-white tracking-tight">
-          Preventivo<span className="text-[#2DD4BF]">AI</span>
+          Previ<span className="text-[#2DD4BF]">Cloud</span>
         </span>
       </header>
 
       <main className="flex-1 flex flex-col items-center px-4 py-10">
         <div className="w-full max-w-lg">
           <h1 className="text-2xl font-semibold text-[#0D1B2A] text-center">
-            Benvenuto su PreventivoAI 👋
+            Benvenuto su PreviCloud 👋
           </h1>
           <p className="text-sm text-gray-500 text-center mt-2 mb-6">
             Prima di continuare, leggi e accetta i termini

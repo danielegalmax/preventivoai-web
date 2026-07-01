@@ -50,7 +50,7 @@ export function DashboardLayout({
           href="/dashboard"
           className="text-lg font-semibold text-white tracking-tight hover:opacity-90"
         >
-          Preventivo<span className="text-[#2DD4BF]">AI</span>
+          Previ<span className="text-[#2DD4BF]">Cloud</span>
         </Link>
 
         <div className="relative" ref={menuRef}>
